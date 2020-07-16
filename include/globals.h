@@ -19,3 +19,4 @@ extern pros::Controller controller;
 extern pros::ADIEncoder encoderL;
 extern pros::ADIEncoder encoderM;
 extern pros::ADIEncoder encoderR;
+extern pros::Imu IMU;

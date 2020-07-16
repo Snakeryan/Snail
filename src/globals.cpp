@@ -19,7 +19,7 @@ pros::Controller controller(pros::E_CONTROLLER_MASTER);
 pros::ADIEncoder encoderL ('C', 'D', false);
 pros::ADIEncoder encoderM ('H', 'G', false);
 pros::ADIEncoder encoderR ('F', 'E', false);
-// pros::ADIGyro(10, 1.0);
+pros::Imu IMU(10);
 
 
 //Miscellaneous:
