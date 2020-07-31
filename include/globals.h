@@ -1,3 +1,5 @@
+#ifndef GLOBALS_H
+#define GLOBALS_H
 #include "main.h"
 
 //motors:
@@ -5,10 +7,10 @@ extern pros::Motor intakeleft;
 extern pros::Motor intakeright;
 extern pros::Motor indexer;
 extern pros::Motor flywheel;
-extern pros::Motor LB;
-extern pros::Motor LF;
-extern pros::Motor RB;
-extern pros::Motor RF;
+extern pros::Motor FL;
+extern pros::Motor FR;
+extern pros::Motor BR;
+extern pros::Motor BL;
 
 //controller:
 
@@ -20,3 +22,5 @@ extern pros::ADIEncoder encoderL;
 extern pros::ADIEncoder encoderM;
 extern pros::ADIEncoder encoderR;
 extern pros::Imu IMU;
+
+#endif 

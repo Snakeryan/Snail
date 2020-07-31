@@ -1,5 +1,8 @@
 #include "main.h"
+#include "auton.h"
 #include "globals.h"
+
+void calibrateIMU();
 
 /**
  * A callback function for LLEMU's center button.
@@ -24,8 +27,9 @@ void on_center_button() {
  * to keep execution time for this mode under a few seconds.
  */
 void initialize() {
+	calibrateIMU();
 	pros::lcd::initialize();
-	pros::lcd::set_text(1, "Hello PROS User!");
+	pros::lcd::set_text(1, "Hello World!");
 
 	pros::lcd::register_btn1_cb(on_center_button);
 }
@@ -59,8 +63,11 @@ void competition_initialize() {}
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
-void autonomous() {}
 
+void autonomous()
+{
+	run_auton();
+}
 /**
  * Runs the operator control code. This function will be started in its own task
  * with the default priority and stack size whenever the robot is enabled via
@@ -89,90 +96,110 @@ void setIntake(int power)
     intakeright = power;
 
 }
-void setDrive(int left, int right)
+void setDrive(int F_B, int strafe, int turn)
 {
-    LB = left;
-    LF = left;
-    RB = right;
-    RF = right;
+    FL = F_B + strafe + (turn);
+    FR = -F_B + strafe + (turn);
+    BR = -F_B - strafe + (turn);
+    BL = F_B - strafe + (turn);
 }
 
 
 //driver control functions:
 
-void encoder()
+void drive()
 {
-	
-	pros::lcd::initialize();	
-	pros::lcd::register_btn1_cb(on_center_button);
-	pros::lcd::set_text(2, "Left: " + std::to_string(encoderL.get_value()));
-	pros::lcd::set_text(3, "Right" + std::to_string(encoderR.get_value()));
-	pros::lcd::set_text(4, "Middle" + std::to_string(encoderM.get_value()));
-}
-void arcade()
-{
-	
 	const int deadzone = 10;
-	int Yaxis = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
-	int Xaxis = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
 	
-	setDrive(Xaxis + Yaxis, Xaxis - Yaxis);
-	if(abs(Yaxis) < deadzone) Yaxis = 0;
-    if(abs(Xaxis) < deadzone) Xaxis = 0;
-}
+	int Xaxis = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
+	int Yaxis = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
 
-void setDriveMotors()
-{
-    const int deadzone = 10;
-    int leftJoystick = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-    int rightJoystick = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
-    setDrive(leftJoystick, rightJoystick);
-    if(abs(leftJoystick) < deadzone) leftJoystick = 0;
-    if(abs(rightJoystick) < deadzone) rightJoystick = 0;
+	int turn = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+	// if(abs(Yaxis) < deadzone) Yaxis = 0;
+    // if(abs(Xaxis) < deadzone) Xaxis = 0;
+	
+	setDrive(Yaxis, Xaxis, turn);
+	
 }
-
 //Macros:
+/*
+we want to:
+launch (L1)
+collect (L2) (intake and indexers at half speed)
+dispence (R1)
+lower indexers down (R2)
 
+*/
 void runMacros()
 {	
-	if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN))
+	if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
 	{
-		// Shooting
+		// launching
 		indexer = 127;
 		flywheel = 127;
+		setIntake(127);
 	}
-	else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP))
+	else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
+	{
+		// collecting
+		indexer = 127;
+		// flywheel = 127 maybe do not want to include this and just run indexers at full speed
+	}
+	else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
 	{
 		// Dispensing
 		indexer = 127;
 		flywheel = -127;
+		setIntake(127);
 	}
+	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
+	{
+		//lower indexers
+		indexer = -127/2; // may want to divide by 2 to make the balls go down slower
+		flywheel = -127/2; //  may want to divide by 2 to make the balls go down slower
+	}
+	
 	else
 	{
-		indexer = 0;
-		flywheel = 0;
+
 		int flywheelPower = 127 * (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X) - (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B)));
 		flywheel = flywheelPower;
 		int indexerPower = 127 * (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2) - (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)));
 		indexer = indexerPower;
-	}
-	if ()
-	{
-		/* code */
-	}
-	
-	int intakePower = 127 * (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2) - (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)));
-    setIntake(intakePower);
-
-
+		setIntake(0);
+	}	
+	// int intakePower = 127 * (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2) - (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)));
+    // setIntake(intakePower);
 }
-void opcontrol() {
+
+//sensors
+void displayData()
+{
+	// pros::lcd::initialize();	
+	pros::lcd::set_text(2, "Left: " + std::to_string(encoderL.get_value()));
+	pros::lcd::set_text(3, "Right" + std::to_string(encoderR.get_value()));
+	pros::lcd::set_text(4, "Middle" + std::to_string(encoderM.get_value()));
+	pros::lcd::set_text(5, "IMU " + std::to_string(IMU.get_heading()));
+}
+
+void calibrateIMU()
+{
+	pros::lcd::set_text(5, "Calibrating IMU");
+	IMU.reset();
+
+  	while (IMU.is_calibrating()) 
+	{
+		pros::delay(10);
+	}
 	
+}
+
+
+void opcontrol() {	
 	while (true) {
-		// setDriveMotors();
+		drive();
 		runMacros();
-		arcade();
-		encoder();
+		displayData();
 		pros::delay(20);
 	}
 }
