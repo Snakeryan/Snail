@@ -1,5 +1,6 @@
 #include "main.h"
 #include "auton.h"
+#include "auton_utils.h"
 #include "globals.h"
 
 void calibrateIMU();
@@ -143,6 +144,7 @@ void runMacros()
 	{
 		// collecting
 		indexer = 127;
+		setIntake(127);
 		// flywheel = 127 maybe do not want to include this and just run indexers at full speed
 	}
 	else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
@@ -158,6 +160,41 @@ void runMacros()
 		indexer = -127/2; // may want to divide by 2 to make the balls go down slower
 		flywheel = -127/2; //  may want to divide by 2 to make the balls go down slower
 	}
+
+	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP))
+	{
+		int deg = round(IMU.get_heading());
+		point_turn_PID(deg, 7, 0, -10, false);
+		pros::delay(20);
+	}
+	
+	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN))
+	{
+		if(IMU.get_heading() <= 45 || IMU.get_heading() > 315)
+		{
+			point_turn_PID(0, 7, 0, 0, false);
+			drive();
+			pros::delay(20);
+		}
+		else if(IMU.get_heading() > 45 && IMU.get_heading() <= 135)
+		{
+			point_turn_PID(90, 7, 0, 0, false);
+			drive();
+			pros::delay(20);
+		}
+		else if(IMU.get_heading() > 135 && IMU.get_heading() <= 225)
+		{
+			point_turn_PID(180, 7, 0, 0, false);
+			drive();
+			pros::delay(20);
+		}
+		else
+		{
+			point_turn_PID(270, 7, 0, 0, false);
+			drive();
+			pros::delay(20);
+		}
+	}
 	
 	else
 	{
@@ -171,7 +208,6 @@ void runMacros()
 	// int intakePower = 127 * (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2) - (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)));
     // setIntake(intakePower);
 }
-
 //sensors
 void displayData()
 {
@@ -195,8 +231,10 @@ void calibrateIMU()
 }
 
 
-void opcontrol() {	
-	while (true) {
+void opcontrol() 
+{	
+	while (true) 
+	{
 		drive();
 		runMacros();
 		displayData();
