@@ -161,40 +161,36 @@ void runMacros()
 		flywheel = -127/2; //  may want to divide by 2 to make the balls go down slower
 	}
 
-	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP))
-	{
-		int deg = round(IMU.get_heading());
-		point_turn_PID(deg, 7, 0, -10, false);
-		pros::delay(20);
-	}
+	// else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP))
+	// {
+	// 	// int deg = round(IMU.get_heading());
+	// 	// point_turn_PID(deg, 7, 0, -10, false);
+	// 	// pros::delay(20);
+	// }
 	
-	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN))
-	{
-		if(IMU.get_heading() <= 45 || IMU.get_heading() > 315)
-		{
-			point_turn_PID(0, 7, 0, 0, false);
-			drive();
-			pros::delay(20);
-		}
-		else if(IMU.get_heading() > 45 && IMU.get_heading() <= 135)
-		{
-			point_turn_PID(90, 7, 0, 0, false);
-			drive();
-			pros::delay(20);
-		}
-		else if(IMU.get_heading() > 135 && IMU.get_heading() <= 225)
-		{
-			point_turn_PID(180, 7, 0, 0, false);
-			drive();
-			pros::delay(20);
-		}
-		else
-		{
-			point_turn_PID(270, 7, 0, 0, false);
-			drive();
-			pros::delay(20);
-		}
-	}
+	// else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN))
+	// {
+	// 	if(IMU.get_heading() <= 45 || IMU.get_heading() > 315)
+	// 	{
+	// 		point_turn_PID(0, 7, 0, 0, false);
+	// 		pros::delay(20);
+	// 	}
+	// 	else if(IMU.get_heading() > 45 && IMU.get_heading() <= 135)
+	// 	{
+	// 		point_turn_PID(90, 7, 0, 0, false);
+	// 		pros::delay(20);
+	// 	}
+	// 	else if(IMU.get_heading() > 135 && IMU.get_heading() <= 225)
+	// 	{
+	// 		point_turn_PID(180, 7, 0, 0, false);
+	// 		pros::delay(20);
+	// 	}
+	// 	else
+	// 	{
+	// 		point_turn_PID(270, 7, 0, 0, false);
+	// 		pros::delay(20);
+	// 	}
+	// }
 	
 	else
 	{

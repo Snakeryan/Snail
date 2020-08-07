@@ -8,6 +8,8 @@ AutonUtils autonutils(1.375, 6.86024, 6.86024, 6.86024, &FL, &FR, &BL, &BR, &enc
 void run_auton() 
 { 
     autonutils.make_update_thread();
+    // autonutils.set_current_global_position(0, 0, 90);
+    autonutils.drive_to_point(-25, -25, 0);
     while(true)
     {
         pros::lcd::set_text(1, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
