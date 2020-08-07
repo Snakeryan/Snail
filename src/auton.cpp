@@ -9,7 +9,8 @@ void run_auton()
 { 
     autonutils.make_update_thread();
     // autonutils.set_current_global_position(0, 0, 90);
-    autonutils.drive_to_point(-25, -25, 0);
+    autonutils.drive_to_point(-20, -20, 90);
+    // autonutils.turn_to_point(10, 0);
     while(true)
     {
         pros::lcd::set_text(1, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));

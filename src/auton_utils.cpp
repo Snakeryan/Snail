@@ -290,32 +290,32 @@ double AutonUtils::compute_s(double P1, double P2, double S)
     BR = P2/s(1 - abs(R)) - R * S
 */
 
-void AutonUtils::compute_FL_motor_speed(double P2, double s, double S, double R)
+void AutonUtils::compute_FL_motor_speed(double P2, double s, double K_constant, double R, double use_motor)
 {
-    double FL_speed = (P2 / s) * (1 - abs(R)) + R * S;
+    double FL_speed = (P2 / s) * (1 - abs(R)) + R * K_constant;
     pros::lcd::set_text(1, "FL motor speed: " + std::to_string(FL_speed));
-    FL-> move_voltage(FL_speed * 12700);
+    FL-> move_voltage(FL_speed * 12700 * use_motor);
 }
 
-void AutonUtils::compute_FR_motor_speed(double P1, double s, double S, double R)
+void AutonUtils::compute_FR_motor_speed(double P1, double s, double K_constant, double R, double use_motor)
 {
-    double FR_speed = (P1 / s) * (1 - abs(R)) - R * S;
+    double FR_speed = ((P1 / s) * (1 - abs(R)) - R * K_constant) * -1;
     pros::lcd::set_text(2, "FR motor speed: " + std::to_string(FR_speed));
-    FR-> move_voltage(FR_speed * 12700);
+    FR-> move_voltage(FR_speed * 12700 * use_motor);
 }
 
-void AutonUtils::compute_BL_motor_speed(double P1, double s, double S, double R)
+void AutonUtils::compute_BL_motor_speed(double P1, double s, double K_constant, double R, double use_motor)
 {
-    double BL_speed = ((P1 / s) * (1 - abs(R)) + R * S) * -1; // was multiplied by -1
+    double BL_speed = ((P1 / s) * (1 - abs(R)) + R * K_constant); // was multiplied by -1
     pros::lcd::set_text(3, "BL motor speed: " + std::to_string(BL_speed));
-    BL-> move_voltage(BL_speed * 12700);
+    BL-> move_voltage(BL_speed * 12700 * use_motor);
 }
 
-void AutonUtils::compute_BR_motor_speed(double P2, double s, double S, double R)
+void AutonUtils::compute_BR_motor_speed(double P2, double s, double K_constant, double R, double use_motor)
 {
-    double BR_speed = ((P2 / s) * (1 - abs(R)) - R * S) * -1; // was multiplied by -1
+    double BR_speed = ((P2 / s) * (1 - abs(R)) - R * K_constant) * -1; 
     pros::lcd::set_text(4, "BR motor speed: " + std::to_string(BR_speed));
-    BR-> move_voltage(BR_speed * 127000);
+    BR-> move_voltage(BR_speed * 127000 * use_motor);
 }
 
 void AutonUtils::start_update_thread()
@@ -369,35 +369,39 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
         
         double current_distance_error = sqrt(pow(error_in_X, 2) + pow(error_in_Y, 2));
 
-        double R =  0.5 * arc_length_error / (current_distance_error + arc_length_error * 0.5);
+         
+
+        double R =  MIN(arc_length_error / (10 + initial_distance_error), 1); // formula was previously: 0.5 * arc_length_error / (current_distance_error + arc_length_error * 0.5);
 
         R = MIN(1, R);
         R = MAX(-1, R);
 
-        double S = MIN((current_distance_error / initial_distance_error) * 2, 1);
+        double S = MIN(current_distance_error, 1); // MIN((current_distance_error / initial_distance_error) * 2, 1);
     
-        double T = atan2(error_in_X, error_in_Y);
-
-        // target_angle_in_degrees > 0 ? T - alpha: T + alpha; 
+        double T = atan2(error_in_Y, error_in_X) + alpha;
         
         double P1 = compute_P1(T);
         
         double P2 = compute_P2(T);
         
         double s = compute_s(P1, P2, S);
+
+        double motors_on_off = 1;
+
+        double K_constant = 1;
         
-        compute_FL_motor_speed(P2, s, S, R);
+        compute_FL_motor_speed(P2, s, K_constant, R, motors_on_off);
         
-        compute_FR_motor_speed(P1, s, S, R);
+        compute_FR_motor_speed(P1, s, K_constant, R, motors_on_off);
         
-        compute_BL_motor_speed(P1, s, S, R);
+        compute_BL_motor_speed(P1, s, K_constant, R, motors_on_off);
         
-        compute_BR_motor_speed(P2, s, S, R);
+        compute_BR_motor_speed(P2, s, K_constant, R, motors_on_off);
 
         pros::lcd::set_text(5, "the error angle: " + std::to_string(rad_to_deg(angle_error)));
        
-        pros::lcd::set_text(6, "R:  " + std::to_string(R));
-        pros::lcd::set_text(7, "S: " + std::to_string(S));
+        pros::lcd::set_text(6, "target angle:  " + std::to_string(rad_to_deg(target_angle)));
+        pros::lcd::set_text(7, "constrained alpha: " + std::to_string(rad_to_deg(get_constrained_alpha())));
         pros::delay(20);
     } 
 }
@@ -452,44 +456,44 @@ void AutonUtils::point_turn_PID(double target, const double Kp, const double Ki,
 
 double AutonUtils::compute_error(double target, double current_angle)
 {
-    // double error = current_angle - target;
-    // if(error < -pi)
-    // {
-    //     return -(error + TAU);
-    // }
-    // else if(error >= -pi && error <= 0) 
-    // {
-    //     return abs(error);
-    // }    
-    // else if(error > 0 && error < pi)
-    // {
-    //     return -error;
-    // } 
-    // else
-    // {
-    // return (error - TAU);
-    // }
-    
-    double error;
-
-    if (abs(target - current_angle) < abs(target - TAU - current_angle))
+    double error = current_angle - target;
+    if(error < -pi)
     {
-        error = target - current_angle; // No zero cross
+        return -(error + TAU);
     }
-    
-    else if (error > pi)
+    else if(error >= -pi && error <= 0) 
     {
-        error = error -TAU;
-    }
-
-    else if (error < -pi)
+        return abs(error);
+    }    
+    else if(error > 0 && error < pi)
     {
-        error = error + TAU; 
-    }
+        return -error;
+    } 
     else
     {
-        error = target - TAU - current_angle; // Zero cross
+    return (error - TAU);
     }
+    
+    // double error;
+
+    // if (abs(target - current_angle) < abs(target - TAU - current_angle))
+    // {
+    //     error = target - current_angle; // No zero cross
+    // }
+    
+    // else if (error > pi)
+    // {
+    //     error = error -TAU;
+    // }
+
+    // else if (error < -pi)
+    // {
+    //     error = error + TAU; 
+    // }
+    // else
+    // {
+    //     error = target - TAU - current_angle; // Zero cross
+    // }
         
 
     

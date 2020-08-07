@@ -27,10 +27,10 @@ class AutonUtils
     double compute_P1(double T);
     double compute_P2(double T);
     double compute_s(double P1, double P2, double S);
-    void compute_FL_motor_speed(double P2, double s, double S, double R);
-    void compute_FR_motor_speed(double P1, double s, double S, double R);
-    void compute_BL_motor_speed(double P1, double s, double S, double R);
-    void compute_BR_motor_speed(double P2, double s, double S, double R);
+    void compute_FL_motor_speed(double P2, double s, double S, double R, double use_motor = 1);
+    void compute_FR_motor_speed(double P1, double s, double S, double R, double use_motor = 1);
+    void compute_BL_motor_speed(double P1, double s, double S, double R, double use_motor = 1);
+    void compute_BR_motor_speed(double P2, double s, double S, double R, double use_motor = 1);
     void update();
     void start_update_thread();
     double rad_to_deg_wraped(double rad);
