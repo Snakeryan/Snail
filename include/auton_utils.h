@@ -27,10 +27,10 @@ class AutonUtils
     double compute_P1(double T);
     double compute_P2(double T);
     double compute_s(double P1, double P2, double S);
-    void compute_FL_motor_speed(double P2, double s, double S, double R, double use_motor = 1);
-    void compute_FR_motor_speed(double P1, double s, double S, double R, double use_motor = 1);
-    void compute_BL_motor_speed(double P1, double s, double S, double R, double use_motor = 1);
-    void compute_BR_motor_speed(double P2, double s, double S, double R, double use_motor = 1);
+    void compute_FL_motor_speed(double P2, double s, double S, double R, double multiplier, double use_motor = 1);
+    void compute_FR_motor_speed(double P1, double s, double S, double R, double multiplier, double use_motor = 1);
+    void compute_BL_motor_speed(double P1, double s, double S, double R, double multiplier, double use_motor = 1);
+    void compute_BR_motor_speed(double P2, double s, double S, double R, double multiplier, double use_motor = 1);
     void update();
     void start_update_thread();
     double rad_to_deg_wraped(double rad);
@@ -43,7 +43,7 @@ class AutonUtils
 
     public:
     double rad_to_deg(double rad);
-    void drive_to_point(double tX, double tY, double target_angle_in_degrees);
+    void drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn);
     void make_update_thread();
     void set_current_global_position(double new_X, double new_Y, double new_alpha_in_degrees);
     AutonUtils(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor* FL, pros::Motor* FR, pros::Motor* BL, pros::Motor* BR, pros::ADIEncoder* encoderL, pros::ADIEncoder* encoderR, pros::ADIEncoder* encoderM);
@@ -53,7 +53,7 @@ class AutonUtils
     double get_left_encoder_distance();
     double get_right_encoder_distance();
     double get_middle_encoder_distance();
-    void point_turn_PID(double target, const double Kp = 45, const double Ki = 0, const double Kd = -0, bool use_IMU = false, bool do_once = false);
+    void point_turn_PID(double target, const double Kp = 45, const double Ki = 1, const double Kd = -0, bool use_IMU = false, bool do_once = false);
     void turn_to_point(double X2, double Y2);
     void move_distance(double X2, double Y2);
     ~AutonUtils();
