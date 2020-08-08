@@ -1,16 +1,33 @@
 #ifndef AUTON_UTILS
 #define AUTON_UTILS
 
+/******************************************************************************/
+/**     General functions for smooth autonomous movements of your robot      **/
+/**                                                                          **/
+/** These methods allow for absolute tracking and positioning of your robot  **/
+/******************************************************************************/
+
+/**
+*\note all of these methods require inches as parmameters
+*/
+
 #include <pthread.h>
 
 
 class AutonUtils
 {
+    
 
+   // Task that updates the odometry functions:
     pros::Mutex update_mutex;
 
+    // all data members of the AutonUtils class:
     double encoder_wheel_radius, wL, wR, wM, globalX, globalY, alpha, prev_alpha, prev_left_encoder_distance, prev_right_encoder_distance, prev_middle_encoder_distance;
+
+    //shared pointer to ensure that the update task(s) will never outlive your function
     std::shared_ptr<pros::Task> task{nullptr};
+
+    // pointers to allow for your motor/sensor parameters to be accessed:
     pros::Motor* FL;
     pros::Motor* FR;
     pros::Motor* BL;
@@ -19,9 +36,45 @@ class AutonUtils
     pros::ADIEncoder* encoderR;
     pros::ADIEncoder* encoderM;
 
+/**
+ * This function computes the change in the angle of your robot 
+ * 
+ *
+ * \param delta_right_distance
+ *        the change in the value of the distance of your right encoder 
+ * \param delta_left_distance
+ *        the change in the value of the distance of your left encoder 
+ *
+ * \return 
+ * the change in the angle of your robot using the formula: (delta_left_distance - delta_right_distance) / (wL + wR)
+*/
     double compute_delta_alpha(double delta_right_distance, double delta_left_distance);
+
+/**
+ * This function computes the change in the value of the local y coordinate of your robot
+ *
+ * \param delta_alpha
+ *        the change in the angle of your robot 
+ * \param delta_right_distance
+ *        the change in the value of the distance of your right encoder 
+ * \return 
+ *        the change in the angle of your robot using the formula: (delta_left_distance - delta_right_distance) / (wL + wR)
+*/
     double compute_delta_Dly(double delta_alpha, double delta_right_distance);
-    double compute_delta_Dlx(double delta_alpha, double delta_middle_distance);
+
+/**
+ * This function computes the change in the value of the local y coordinate of your robot
+ *
+ * \param delta_alpha
+ *        the change in the angle of your robot 
+ * \param delta_right_distance
+ *        the change in the value of the distance of your right encoder 
+ * \return 
+ *        the change in the angle of your robot using the formula: (delta_left_distance - delta_right_distance) / (wL + wR)
+*/
+
+
+double compute_delta_Dlx(double delta_alpha, double delta_middle_distance);
     double compute_delta_globalX(double dlX, double dlY, double delta_alpha);
     double compute_delta_globalY(double dlX, double dlY, double delta_alpha);
     double compute_P1(double T);

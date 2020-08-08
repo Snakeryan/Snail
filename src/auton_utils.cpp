@@ -378,7 +378,7 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
 
          
 
-        double R =  MIN((arc_length_error * rotational_KP) / (15 + initial_distance_error), 1); // formula was previously: 0.5 * arc_length_error / (current_distance_error + arc_length_error * 0.5);
+        double R =  MIN((arc_length_error * rotational_KP) / (15 + abs(current_distance_error)), 1); // formula was previously: 0.5 * arc_length_error / (current_distance_error + arc_length_error * 0.5);
 
         R = MIN(1, R);
         R = MAX(-1, R);

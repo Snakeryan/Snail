@@ -8,8 +8,8 @@ AutonUtils autonutils(1.375, 6.86024, 6.86024, 6.86024, &FL, &FR, &BL, &BR, &enc
 void run_auton() 
 { 
     autonutils.make_update_thread();
-    autonutils.set_current_global_position(10, 10, 0);
-    autonutils.drive_to_point(-10, -10, 180, true);
+    // autonutils.set_current_global_position(10, 10, 0);
+    autonutils.drive_to_point(0, 50, 10, false);
     FL = 0;
     FR = 0;
     BL = 0;
