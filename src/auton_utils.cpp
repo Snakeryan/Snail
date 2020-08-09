@@ -387,12 +387,14 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
     double prev_distance_error;
     double current_distance_error;
     double angle_error;
+    double accumulated_error;
 
     do
     {
         // variables that calculate the error in the X coordinate, Y coordinate, and angle:
         double error_in_X = tX - globalX;
         double error_in_Y = tY - globalY; 
+        prev_distance_error = current_distance_error;
         current_distance_error = sqrt(pow(error_in_X, 2) + pow(error_in_Y, 2));
 
         // rotational error (have arc_length_error so that we can convert angle error into inch):
@@ -410,8 +412,20 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
         //how much motor power to apply to translational (if S = 1 more translation and S = 0 is less translational)
         double S; // OLD no threshold mode -> = MIN(abs(current_distance_error / initial_distance_error) * translational_KP, 1);
         if(abs(current_distance_error) < slow_down_distance_threshold)
-        {
-            S = abs(current_distance_error) / (slow_down_distance_threshold * 1.7);
+        {   
+            if(abs(current_distance_error) < 2)
+            {
+                accumulated_error += current_distance_error;
+            }
+            else
+            {
+                accumulated_error = 0;
+            }
+            
+            
+            S = ((abs(current_distance_error)) / (slow_down_distance_threshold * 1.7)) + abs(accumulated_error * 0.0015);
+
+
             S = constrain(S, 0.0, 1.0);
         }
         else
@@ -443,16 +457,13 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
         pros::lcd::set_text(6, "alpha: " + std::to_string(rad_to_deg(alpha)));
         pros::lcd::set_text(7, "coordinates: (" + std::to_string(globalX) + ", " + std::to_string(globalY) + ")");
         
-
-
         //setting the previous values of the translational and rotational errors
         prev_angle_error = angle_error;
-        prev_distance_error = current_distance_error;
-
+        
         //delay (can be very small):
         pros::delay(20);
     } 
-    while (((abs(prev_distance_error - current_distance_error) > 0.00001)) || abs(current_distance_error) > 0.1);
+    while (abs(current_distance_error) > 0.2);
     
     //if you want to have much less final error in the target angle:
     if(use_precise_turn)
