@@ -26,7 +26,7 @@ pros::Imu IMU(2);
 
 // pros::vision_signature BLUE_BALL_SIGNATURE (1, -2821, -619, -1720, 1983, 6425, 4204, 1.200, 0); //BLUE
 // pros::vision_signature RED_BALL_SIGNATURE (1, 7209, 10415, 8812, -2529, -2115, -2322, 1.700, 0);
-// pros::Vision vision_sensor(4);
+pros::Vision vision_sensor(4);
 
 
 //Miscellaneous:

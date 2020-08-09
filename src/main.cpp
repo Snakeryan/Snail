@@ -130,78 +130,30 @@ dispence (R1)
 lower indexers down (R2)
 
 */
-void runMacros()
+void run_macros()
 {	
+
+	// intake 1 direction
+	// indexer 1 direction
+	// flywheel 2 directions (1 up and 1 do)
 	if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
 	{
-		// launching
-		indexer = 127;
-		flywheel = 127;
 		setIntake(127);
 	}
-	else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
+	else 
 	{
-		// collecting
-		indexer = 127;
-		setIntake(127);
-		// flywheel = 127 maybe do not want to include this and just run indexers at full speed
-	}
-	else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
-	{
-		// Dispensing
-		indexer = 127;
-		flywheel = -127;
-		setIntake(127);
-	}
-	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
-	{
-		//lower indexers
-		indexer = -127/2; // may want to divide by 2 to make the balls go down slower
-		flywheel = -127/2; //  may want to divide by 2 to make the balls go down slower
-	}
-
-	// else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP))
-	// {
-	// 	// int deg = round(IMU.get_heading());
-	// 	// point_turn_PID(deg, 7, 0, -10, false);
-	// 	// pros::delay(20);
-	// }
-	
-	// else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN))
-	// {
-	// 	if(IMU.get_heading() <= 45 || IMU.get_heading() > 315)
-	// 	{
-	// 		point_turn_PID(0, 7, 0, 0, false);
-	// 		pros::delay(20);
-	// 	}
-	// 	else if(IMU.get_heading() > 45 && IMU.get_heading() <= 135)
-	// 	{
-	// 		point_turn_PID(90, 7, 0, 0, false);
-	// 		pros::delay(20);
-	// 	}
-	// 	else if(IMU.get_heading() > 135 && IMU.get_heading() <= 225)
-	// 	{
-	// 		point_turn_PID(180, 7, 0, 0, false);
-	// 		pros::delay(20);
-	// 	}
-	// 	else
-	// 	{
-	// 		point_turn_PID(270, 7, 0, 0, false);
-	// 		pros::delay(20);
-	// 	}
-	// }
-	
-	else
-	{
-
-		int flywheelPower = 127 * (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X) - (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B)));
-		flywheel = flywheelPower;
-		int indexerPower = 127 * (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2) - (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)));
-		indexer = indexerPower;
 		setIntake(0);
-	}	
-	// int intakePower = 127 * (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2) - (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)));
-    // setIntake(intakePower);
+	}
+	if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
+	{
+		// indexer
+		indexer = 127;
+	} else 
+	{
+		indexer = 0;
+	}
+	
+	
 }
 //sensors
 void displayData()
@@ -226,22 +178,49 @@ void calibrateIMU()
 }
 void color_sorting()
 {
-	// const double blue_ball = COLOR_BLUE; 
-	// const double red_ball = COLOR_RED;
+  	pros::vision_signature_s_t BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
+  	pros::vision_signature_s_t RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
 
+  	vision_sensor.set_signature(1, &BLUE_BALL_SIGNATURE);
+	vision_sensor.set_signature(2, &RED_BALL_SIGNATURE);
 	
-
-
-
-
-    // Gets the largest object of the EXAMPLE_SIG signature
-    // std::cout << "sig: " << rtn.vision_get_signature();
-
-	// pros::vision_signature_s_t()
-    // Prints "sig: 1"
-    pros::delay(2); 
-
-
+	while (true) 
+	{
+		pros::vision_object_s_t rtn = vision_sensor.get_by_size(0);
+		// Gets the largest object of the EXAMPLE_SIG signature
+		pros::lcd::set_text(2, "signature: " + std::to_string(rtn.signature));
+		pros::lcd::set_text(3, "w: " + std::to_string(rtn.width));
+		pros::lcd::set_text(4, "h: " + std::to_string(rtn.height));
+		pros::delay(10);
+		if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
+		{
+			// flywheel negative, manual dispensing
+			flywheel = -127;
+		} 
+		else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
+		{
+			//flywheel positive, shooting
+			flywheel = 127;
+		}  
+		else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_A))
+		{
+			if(rtn.signature == 2) //red
+			{
+				flywheel = -127;
+			}
+			else if(rtn.signature == 1) // blue
+			{
+				flywheel = 127;
+			} else 
+			{
+				flywheel = 0;
+			}
+		}
+		else
+		{
+			flywheel = 0;
+		}
+	}
 
 }
 
@@ -249,12 +228,11 @@ void color_sorting()
 
 void opcontrol() 
 {	
+	pros::Task color_sorter(color_sorting);
 	while (true) 
 	{
-		// color_sorting();
 		drive();
-		runMacros();
-		displayData();
+		run_macros();
 		pros::delay(20);
 	}
 }
