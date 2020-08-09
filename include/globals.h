@@ -23,4 +23,9 @@ extern pros::ADIEncoder encoderM;
 extern pros::ADIEncoder encoderR;
 extern pros::Imu IMU;
 
+
+extern pros::vision_signature BLUE_BALL_SIGNATURE;
+extern pros::vision_signature RED_BALL_SIGNATURE;
+extern pros::Vision vision_sensor;
+
 #endif 

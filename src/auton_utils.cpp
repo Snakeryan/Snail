@@ -56,6 +56,18 @@ this makes the program modular:
     BR = P2/s(1 - abs(R)) - R * S
 */
 
+template<class T>
+const T& constrain(const T& x, const T& a, const T& b) {
+    if(x < a) {
+        return a;
+    }
+    else if(b < x) {
+        return b;
+    }
+    else
+        return x;
+}
+
 AutonUtils::AutonUtils(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor* FL, pros::Motor* FR, pros::Motor* BL, pros::Motor* BR, pros::ADIEncoder* encoderL, pros::ADIEncoder* encoderR, pros::ADIEncoder* encoderM) 
 {
     this->encoder_wheel_radius = encoder_wheel_radius;
@@ -70,9 +82,9 @@ AutonUtils::AutonUtils(double encoder_wheel_radius, double wL, double wR, double
     this->encoderR = encoderR;
     this->encoderM = encoderM;
     // globalX = 0;
-    // dlX = 0;
+    // Dlx = 0;
     // globalY = 0;
-    // dlY = 0;
+    // Dly = 0;
 }
 
 
@@ -136,14 +148,14 @@ double AutonUtils::compute_delta_Dlx(double delta_alpha, double delta_middle_dis
 //method to convert from local variables to global variables
 //formulas are: globalX = (Dlx * cos(alpha/2)) + (Dly * sin(alpha/2)) globalY = (Dly * cos(alpha/2)) - (Dlx * sin(alpha/2)):
 
-double AutonUtils::compute_delta_globalX(double dlX, double dlY, double delta_alpha)
+double AutonUtils::compute_delta_globalX(double Dlx, double Dly, double delta_alpha)
 {
-    return (dlX * cos(delta_alpha/2 + prev_alpha)) + (dlY * sin(delta_alpha/2 + prev_alpha)); 
+    return (Dlx * cos(delta_alpha/2 + prev_alpha)) + (Dly * sin(delta_alpha/2 + prev_alpha)); 
 }
 
-double AutonUtils::compute_delta_globalY(double dlX, double dlY, double delta_alpha)
+double AutonUtils::compute_delta_globalY(double Dlx, double Dly, double delta_alpha)
 {
-    return (dlY * cos(delta_alpha/2 + prev_alpha)) - (dlX * sin(delta_alpha/2 + prev_alpha)); 
+    return (Dly * cos(delta_alpha/2 + prev_alpha)) - (Dlx * sin(delta_alpha/2 + prev_alpha)); 
 }
 
 
@@ -210,14 +222,14 @@ void AutonUtils::update()
     double delta_alpha = compute_delta_alpha(delta_right_encoder_distance, delta_left_encoder_distance);
     alpha += delta_alpha;
 
-    double dlX = compute_delta_Dlx(delta_alpha, delta_middle_encoder_distance); 
-    double dlY = compute_delta_Dly(delta_alpha, delta_right_encoder_distance); 
+    double Dlx = compute_delta_Dlx(delta_alpha, delta_middle_encoder_distance); 
+    double Dly = compute_delta_Dly(delta_alpha, delta_right_encoder_distance); 
 
 
-    double delta_globalX = compute_delta_globalX(dlX, dlY, delta_alpha); 
+    double delta_globalX = compute_delta_globalX(Dlx, Dly, delta_alpha); 
     globalX += delta_globalX;
 
-    double delta_globalY = compute_delta_globalY(dlX, dlY, delta_alpha); 
+    double delta_globalY = compute_delta_globalY(Dlx, Dly, delta_alpha); 
     globalY += delta_globalY;
 
     prev_left_encoder_distance = left_encoder_distance;
@@ -242,9 +254,9 @@ double AutonUtils::get_constrained_alpha()
 /*
 functions to calculate main variable:
 
-T = arctan2(dlY, dlX)
+T = arctan2(Dly, Dlx)
 
-S = MIN(sqrt(pow(dlX, 2) + pow(dlY, 2)), 1)
+S = MIN(sqrt(pow(Dlx, 2) + pow(Dly, 2)), 1)
 
 */
 
@@ -352,72 +364,84 @@ void AutonUtils::set_turn(int turn)
     BL-> move_voltage(turn * 1000);
 }
 
-//function to call all of the motion algorithms and update the variables:
+// function to drive to a point with and without turning:
 
 void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn)
 {
+    //hyperparameters:
+    const double rotational_KP = 2;
+    const double translational_KP = 2;
+    const double motors_on_off = 1;
+    const double K_constant = 1;
+    const double multiplier = 2;
+
+    // setting the initial distance error:
     double initial_distance_error = sqrt(pow(tX - globalX, 2) + pow(tY - globalY, 2));
+
+    //changing the target angle to radians:
     double target_angle = deg_to_rad(target_angle_in_degrees);
+
+    //declaring all of the error variables:
     double prev_angle_error;
     double prev_distance_error;
     double current_distance_error;
     double angle_error;
+
     do
     {
+        // variables that calculate the error in the X coordinate, Y coordinate, and angle:
         double error_in_X = tX - globalX;
         double error_in_Y = tY - globalY; 
-        
-        angle_error = compute_error(target_angle, get_constrained_alpha());
-
-        double arc_length_error = angle_error * wM;
-
-        double rotational_KP = 2;
-        double translational_KP = 2;
-        
         current_distance_error = sqrt(pow(error_in_X, 2) + pow(error_in_Y, 2));
 
-         
-
+        // rotational error (have arc_length_error so that we can convert angle error into inch):
+        angle_error = compute_error(target_angle, get_constrained_alpha());
+        double arc_length_error = angle_error * wM;  
+        
+        //ratio between the rotational and translational errors to tell 
         double R =  MIN((arc_length_error * rotational_KP) / (15 + abs(current_distance_error)), 1); // formula was previously: 0.5 * arc_length_error / (current_distance_error + arc_length_error * 0.5);
+        R = constrain(R, -1.0, 1.0);
 
-        R = MIN(1, R);
-        R = MAX(-1, R);
-
+        //how much motor power to apply to translational (if S = 1 more translation and S = 0 is less translational)
         double S = MIN((current_distance_error / initial_distance_error) * translational_KP, 1);
+        
+
     
+        //Target coordinate plane offset:
         double T = atan2(error_in_Y, error_in_X) + alpha;
-        
+
+        //intermediates:
         double P1 = compute_P1(T);
-        
         double P2 = compute_P2(T);
-        
         double s = compute_s(P1, P2, S);
 
-        double motors_on_off = 1;
-
-        double K_constant = 1;
-        double multiplier = 2;
-        
+        //how much power to apply to each motor:
         compute_FL_motor_speed(P2, s, K_constant, R, multiplier, motors_on_off);       
         compute_FR_motor_speed(P1, s, K_constant, R, multiplier, motors_on_off);       
         compute_BL_motor_speed(P1, s, K_constant, R, multiplier, motors_on_off);       
         compute_BR_motor_speed(P2, s, K_constant, R, multiplier, motors_on_off);
 
+        //debugging:
         pros::lcd::set_text(5, "the error angle: " + std::to_string(rad_to_deg(angle_error)));
-       
         pros::lcd::set_text(6, "alpha: " + std::to_string(rad_to_deg(alpha)));
         pros::lcd::set_text(7, "coordinates: (" + std::to_string(globalX) + ", " + std::to_string(globalY) + ")");
 
+        //setting the previous values of the translational and rotational errors
         prev_angle_error = angle_error;
         prev_distance_error = current_distance_error;
 
+        //delay (can be very small):
         pros::delay(20);
     } 
     while (((abs(prev_distance_error - current_distance_error) > 0.00001)) || abs(current_distance_error) > 0.1);
+    
+    //if you want to have much less final error in the target angle:
     if(use_precise_turn)
     {
-        point_turn_PID(target_angle);
+        point_turn_PID(target_angle, 37.5, .7, 0);
     }
+
+    //if you want to see when the function has exited:
     pros::lcd::set_text(0, "drive_to_point exited");
 }
 
@@ -464,7 +488,7 @@ void AutonUtils::point_turn_PID(double target, const double Kp, const double Ki,
 
     } while (((abs(previous_error - error) > 0.000000000001) || abs(error) > 0.01));
 
-    pros::lcd::set_text(1, "pid escaped");
+    pros::lcd::set_text(0, "pid escaped");
     
 }
 
@@ -486,7 +510,7 @@ double AutonUtils::compute_error(double target, double current_angle)
     } 
     else
     {
-    return (error - TAU);
+    return abs(error - TAU);
     }
     
     // double error;
@@ -512,7 +536,7 @@ double AutonUtils::compute_error(double target, double current_angle)
         
 
     
-    return error;
+    // return error;
 }
 
 

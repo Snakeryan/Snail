@@ -7,11 +7,9 @@
 /** These methods allow for absolute tracking and positioning of your robot  **/
 /******************************************************************************/
 
-/**
-*\note all of these methods require inches as parmameters
-*/
 
-#include <pthread.h>
+
+// #include <pthread.h>
 
 
 class AutonUtils
@@ -37,8 +35,8 @@ class AutonUtils
     pros::ADIEncoder* encoderM;
 
 /**
- * This function computes the change in the angle of your robot 
  * 
+ * \note this method takes inches as the units
  *
  * \param delta_right_distance
  *        the change in the value of the distance of your right encoder 
@@ -46,36 +44,50 @@ class AutonUtils
  *        the change in the value of the distance of your left encoder 
  *
  * \return 
- * the change in the angle of your robot using the formula: (delta_left_distance - delta_right_distance) / (wL + wR)
+ *        the change in the angle of your robot 
+ * \note 
+ *      this is the formula used: (delta_left_distance - delta_right_distance) / (wL + wR)
 */
     double compute_delta_alpha(double delta_right_distance, double delta_left_distance);
 
 /**
- * This function computes the change in the value of the local y coordinate of your robot
  *
  * \param delta_alpha
- *        the change in the angle of your robot 
+ *        the change in the angle of your robot (takes degrees)
  * \param delta_right_distance
- *        the change in the value of the distance of your right encoder 
+ *        the change in the value of the distance of your right encoder (takes inches)
  * \return 
- *        the change in the angle of your robot using the formula: (delta_left_distance - delta_right_distance) / (wL + wR)
+ *        the change in the local Y coordinate of your robot 
+ * \note 
+ *        this is the formula used: (2 * sin(delta_alpha / 2)) * (wR + (delta_right_distance /delta_alpha))
 */
     double compute_delta_Dly(double delta_alpha, double delta_right_distance);
 
 /**
- * This function computes the change in the value of the local y coordinate of your robot
  *
  * \param delta_alpha
  *        the change in the angle of your robot 
- * \param delta_right_distance
+ * \param delta_middle_distance
  *        the change in the value of the distance of your right encoder 
  * \return 
- *        the change in the angle of your robot using the formula: (delta_left_distance - delta_right_distance) / (wL + wR)
+ *        the change in the local X coordinate of your robot 
+ * \note 
+ *        this is the formula used: (2 * sin(delta_alpha / 2)) * ((delta_middle_distance / delta_alpha) + wM)
 */
+    double compute_delta_Dlx(double delta_alpha, double delta_middle_distance);
 
-
-double compute_delta_Dlx(double delta_alpha, double delta_middle_distance);
-    double compute_delta_globalX(double dlX, double dlY, double delta_alpha);
+/**
+ *
+ * \param Dlx
+ *        the change in the angle of your robot 
+ * \param delta_middle_distance
+ *        the change in the value of the distance of your right encoder 
+ * \return 
+ *        the change in the absolute, or global, X coordinate of your robot 
+ * \note 
+ *        this is the formula used: (2 * sin(delta_alpha / 2)) * ((delta_middle_distance / delta_alpha) + wM)
+*/
+    double compute_delta_globalX(double Dlx, double dlY, double delta_alpha);
     double compute_delta_globalY(double dlX, double dlY, double delta_alpha);
     double compute_P1(double T);
     double compute_P2(double T);
@@ -106,7 +118,7 @@ double compute_delta_Dlx(double delta_alpha, double delta_middle_distance);
     double get_left_encoder_distance();
     double get_right_encoder_distance();
     double get_middle_encoder_distance();
-    void point_turn_PID(double target, const double Kp = 45, const double Ki = 1, const double Kd = -0, bool use_IMU = false, bool do_once = false);
+    void point_turn_PID(double target, const double Kp = 37.5, const double Ki = .7, const double Kd = -0, bool use_IMU = false, bool do_once = false);
     void turn_to_point(double X2, double Y2);
     void move_distance(double X2, double Y2);
     ~AutonUtils();

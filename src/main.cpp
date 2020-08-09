@@ -2,7 +2,6 @@
 #include "auton.h"
 #include "auton_utils.h"
 #include "globals.h"
-
 void calibrateIMU();
 
 /**
@@ -225,12 +224,34 @@ void calibrateIMU()
 	}
 	
 }
+void color_sorting()
+{
+	// const double blue_ball = COLOR_BLUE; 
+	// const double red_ball = COLOR_RED;
+
+	
+
+
+
+
+    // Gets the largest object of the EXAMPLE_SIG signature
+    // std::cout << "sig: " << rtn.vision_get_signature();
+
+	// pros::vision_signature_s_t()
+    // Prints "sig: 1"
+    pros::delay(2); 
+
+
+
+}
+
 
 
 void opcontrol() 
 {	
 	while (true) 
 	{
+		// color_sorting();
 		drive();
 		runMacros();
 		displayData();
