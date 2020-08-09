@@ -374,6 +374,7 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
     const double motors_on_off = 1;
     const double K_constant = 1;
     const double multiplier = 2;
+    const double slow_down_distance_threshold = 18;
 
     // setting the initial distance error:
     double initial_distance_error = sqrt(pow(tX - globalX, 2) + pow(tY - globalY, 2));
@@ -396,14 +397,28 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
 
         // rotational error (have arc_length_error so that we can convert angle error into inch):
         angle_error = compute_error(target_angle, get_constrained_alpha());
-        double arc_length_error = angle_error * wM;  
+        double arc_length_error = angle_error * wM;
+        if(abs(current_distance_error) < 2)
+        {
+            arc_length_error = 0;
+        }  
         
         //ratio between the rotational and translational errors to tell 
         double R =  MIN((arc_length_error * rotational_KP) / (15 + abs(current_distance_error)), 1); // formula was previously: 0.5 * arc_length_error / (current_distance_error + arc_length_error * 0.5);
         R = constrain(R, -1.0, 1.0);
 
         //how much motor power to apply to translational (if S = 1 more translation and S = 0 is less translational)
-        double S = MIN((current_distance_error / initial_distance_error) * translational_KP, 1);
+        double S; // OLD no threshold mode -> = MIN(abs(current_distance_error / initial_distance_error) * translational_KP, 1);
+        if(abs(current_distance_error) < slow_down_distance_threshold)
+        {
+            S = abs(current_distance_error) / (slow_down_distance_threshold * 1.7);
+            S = constrain(S, 0.0, 1.0);
+        }
+        else
+        {
+            S = 1;
+        }
+        
         
 
     
@@ -422,9 +437,13 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
         compute_BR_motor_speed(P2, s, K_constant, R, multiplier, motors_on_off);
 
         //debugging:
+        pros::lcd::set_text(3, "distance error: " + std::to_string(current_distance_error));
+        pros::lcd::set_text(4, "R: " + std::to_string(R));
         pros::lcd::set_text(5, "the error angle: " + std::to_string(rad_to_deg(angle_error)));
         pros::lcd::set_text(6, "alpha: " + std::to_string(rad_to_deg(alpha)));
         pros::lcd::set_text(7, "coordinates: (" + std::to_string(globalX) + ", " + std::to_string(globalY) + ")");
+        
+
 
         //setting the previous values of the translational and rotational errors
         prev_angle_error = angle_error;
