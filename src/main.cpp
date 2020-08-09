@@ -2,6 +2,7 @@
 #include "auton.h"
 #include "auton_utils.h"
 #include "globals.h"
+#include "helper.h"
 void calibrateIMU();
 
 /**
@@ -90,12 +91,7 @@ void autonomous()
 
 
 
-void setIntake(int power)
-{
-    intakeleft = power;
-    intakeright = power;
 
-}
 void setDrive(int F_B, int strafe, int turn)
 {
     FL = F_B + strafe + (turn);
@@ -176,6 +172,7 @@ void calibrateIMU()
 	}
 	
 }
+
 void color_sorting()
 {
   	pros::vision_signature_s_t BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
@@ -220,6 +217,7 @@ void color_sorting()
 		{
 			flywheel = 0;
 		}
+		pros::delay(20);
 	}
 
 }

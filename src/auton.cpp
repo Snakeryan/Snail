@@ -1,47 +1,99 @@
 #include "main.h"
 #include "auton.h"
 #include "auton_utils.h"
+#include "helper.h"
 
+bool sort_balls = false;
 
 AutonUtils autonutils(1.375, 6.86024, 6.86024, 6.86024, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM);
+
+void score(int flywheel_power, int indexer_power)
+{
+    flywheel = flywheel_power;
+    indexer = indexer_power;
+}
+
+void auton_color_sorting()
+{
+  	pros::vision_signature_s_t BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
+  	pros::vision_signature_s_t RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
+
+  	vision_sensor.set_signature(1, &BLUE_BALL_SIGNATURE);
+	vision_sensor.set_signature(2, &RED_BALL_SIGNATURE);
+	
+	while (true) 
+	{
+        if (sort_balls) 
+        {
+            pros::vision_object_s_t rtn = vision_sensor.get_by_size(0);
+            // Gets the largest object of the EXAMPLE_SIG signature
+            pros::lcd::set_text(2, "signature: " + std::to_string(rtn.signature));
+            pros::lcd::set_text(3, "w: " + std::to_string(rtn.width));
+            pros::lcd::set_text(4, "h: " + std::to_string(rtn.height));
+            pros::delay(10);
+            
+            if(rtn.signature == 2) //red
+            {
+                flywheel = -127;
+            }
+            else if(rtn.signature == 1) // blue
+            {
+                flywheel = 127;
+            } else 
+            {
+                flywheel = 0;
+            }
+        }
+        pros::Task::delay(10);
+		
+	}
+}
+
+void debug_autonomous()
+{
+    while(true)
+    {
+        pros::lcd::set_text(1, "coordinates: (" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")");
+        pros::lcd::set_text(2, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
+        pros::Task::delay(10);
+    
+    }
+
+}
+
+void stop()
+{
+    FL = 0;
+    FR = 0;
+    BL = 0;
+    BR = 0;
+}
 
 void run_auton() 
 { 
     autonutils.make_update_thread();
-    // autonutils.set_current_global_position(10, 10, 0);
-    // while(true)
-    // {
-    //     autonutils.drive_to_point(0, 20, 90, false, true);
-    //     autonutils.drive_to_point(-20, 20, 0, false, true);
-    //     autonutils.drive_to_point(-20, 0, 270, false, true);
-    //     autonutils.drive_to_point(0, 0, 0, false, false);
-    // }
+    pros::Task color_sorter(auton_color_sorting);
+    pros::Task autonomous_debugger(debug_autonomous);
+    
+    pros::lcd::set_text(0, "Autonomous Mode ");
+    autonutils.set_current_global_position(0, 0, 0);
 
+    setIntake(127);
+    autonutils.drive_to_point(2, -17, 45, false, true);
 
-    // autonutils.point_turn_PID(pi/2, 45, 1, 0, false);
-    // FL = 0;
-    // FR = 0;
-    // BL = 0;
-    // BR = 0;
-    // autonutils.turn_to_point(10, 0);
-    while(true)
-    {
-        pros::lcd::set_text(0, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
-        pros::lcd::set_text(1, "IMU:" + std::to_string(IMU.get_heading()));
-        pros::lcd::set_text(2, "Right tracking wheel: " + std::to_string(autonutils.get_right_encoder_distance()));
-        pros::lcd::set_text(3, "Left tracking wheel: " + std::to_string(autonutils.get_left_encoder_distance()));
-        pros::lcd::set_text(4, "middle tracking wheel: " + std::to_string(autonutils.get_middle_encoder_distance()));
-        pros::lcd::set_text(5, "globalX: " + std::to_string(autonutils.get_globalX()));
-        pros::lcd::set_text(6, "globalY: " + std::to_string(autonutils.get_globalY()));
-    //     // pros::lcd::set_text(6, "dlX: " + std::to_string(autonutils.get_dlX()));
-    //     // pros::lcd::set_text(7, "dlY: " + std::to_string(autonutils.get_dlY()));
-    //     // pros::lcd::set_text(6, "delta globalX: " + std::to_string(autonutils.get_delta_globalX()));
-    //     // pros::lcd::set_text(7, "delta globalY: " + std::to_string(autonutils.get_delta_globalY()));
+    // First Goal
+    autonutils.drive_to_point(16.2, -5.7, 45, false, true);
+    stop();
+    sort_balls = true;
+    score(127, 127);
+    pros::delay(2000);
 
-        pros::delay(20);
-    }
+    // Waypoint to second goal
+    sort_balls = false;
+    score(0, 0);
+    setIntake(0);
+    autonutils.drive_to_point(-37.1, -23.7, 0, false, true);
+    autonutils.drive_to_point(-37.5, -9.6, 0, false, false);
+    stop();
 
-
-    // point_turn_PID(160, 7, 0.01, -17); // 0.01 precision
-    // point_turn_PID(90, 9, 0, 0);
 }

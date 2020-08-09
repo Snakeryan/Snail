@@ -25,5 +25,5 @@ extern pros::Imu IMU;
 
 extern pros::Vision vision_sensor;
 
-
+// extern bool is_autonomous;
 #endif 
