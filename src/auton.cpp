@@ -11,10 +11,10 @@ void run_auton()
     // autonutils.set_current_global_position(10, 10, 0);
     while(true)
     {
-        autonutils.drive_to_point(0, 20, 90, false);
-        autonutils.drive_to_point(-20, 20, 0, false);
-        autonutils.drive_to_point(-20, 0, 270, false);
-        autonutils.drive_to_point(0, 0, 0, false);
+        autonutils.drive_to_point(0, 20, 90, false, true);
+        autonutils.drive_to_point(-20, 20, 0, false, true);
+        autonutils.drive_to_point(-20, 0, 270, false, true);
+        autonutils.drive_to_point(0, 0, 0, false, false);
     }
 
 

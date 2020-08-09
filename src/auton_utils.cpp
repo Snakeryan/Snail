@@ -366,7 +366,7 @@ void AutonUtils::set_turn(int turn)
 
 // function to drive to a point with and without turning:
 
-void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn)
+void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint)
 {
     //hyperparameters:
     const double rotational_KP = 2;
@@ -374,8 +374,18 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
     const double motors_on_off = 1;
     const double K_constant = 1;
     const double multiplier = 2;
-    const double slow_down_distance_threshold = 18;
+    
+    //when to slow down using a threshold:
+    double slow_down_distance_threshold = 18;
 
+    //acceptable distance error:
+    double acceptable_distance_error = 0.2;
+
+    if(is_waypoint == true)
+    {
+        acceptable_distance_error = 1.5;
+        slow_down_distance_threshold = 3;
+    }
     // setting the initial distance error:
     double initial_distance_error = sqrt(pow(tX - globalX, 2) + pow(tY - globalY, 2));
 
@@ -411,6 +421,7 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
 
         //how much motor power to apply to translational (if S = 1 more translation and S = 0 is less translational)
         double S; // OLD no threshold mode -> = MIN(abs(current_distance_error / initial_distance_error) * translational_KP, 1);
+        
         if(abs(current_distance_error) < slow_down_distance_threshold)
         {   
             if(abs(current_distance_error) < 2)
@@ -463,7 +474,7 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
         //delay (can be very small):
         pros::delay(20);
     } 
-    while (abs(current_distance_error) > 0.2);
+    while (abs(current_distance_error) > acceptable_distance_error);
     
     //if you want to have much less final error in the target angle:
     if(use_precise_turn)

@@ -108,7 +108,7 @@ class AutonUtils
 
     public:
     double rad_to_deg(double rad);
-    void drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn);
+    void drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint);
     void make_update_thread();
     void set_current_global_position(double new_X, double new_Y, double new_alpha_in_degrees);
     AutonUtils(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor* FL, pros::Motor* FR, pros::Motor* BL, pros::Motor* BR, pros::ADIEncoder* encoderL, pros::ADIEncoder* encoderR, pros::ADIEncoder* encoderM);
