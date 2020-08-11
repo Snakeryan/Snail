@@ -305,28 +305,24 @@ double AutonUtils::compute_s(double P1, double P2, double S)
 void AutonUtils::compute_FL_motor_speed(double P2, double s, double K_constant, double R, double multiplier, double use_motor)
 {
     double FL_speed = (P2 / s) * (1 - abs(R)) + R * K_constant;
-    // pros::lcd::set_text(1, "FL motor speed: " + std::to_string(FL_speed));
     FL-> move_voltage(FL_speed * 12700 * use_motor * multiplier);
 }
 
 void AutonUtils::compute_FR_motor_speed(double P1, double s, double K_constant, double R, double multiplier, double use_motor)
 {
     double FR_speed = ((P1 / s) * (1 - abs(R)) - R * K_constant) * -1;
-    // pros::lcd::set_text(2, "FR motor speed: " + std::to_string(FR_speed));
     FR-> move_voltage(FR_speed * 12700 * use_motor * multiplier);
 }
 
 void AutonUtils::compute_BL_motor_speed(double P1, double s, double K_constant, double R, double multiplier, double use_motor)
 {
-    double BL_speed = ((P1 / s) * (1 - abs(R)) + R * K_constant); // was multiplied by -1
-    // pros::lcd::set_text(3, "BL motor speed: " + std::to_string(BL_speed));
+    double BL_speed = ((P1 / s) * (1 - abs(R)) + R * K_constant);
     BL-> move_voltage(BL_speed * 12700 * use_motor * multiplier);
 }
 
 void AutonUtils::compute_BR_motor_speed(double P2, double s, double K_constant, double R, double multiplier, double use_motor)
 {
-    double BR_speed = ((P2 / s) * (1 - abs(R)) - R * K_constant) * -1; 
-    // pros::lcd::set_text(4, "BR motor speed: " + std::to_string(BR_speed));
+    double BR_speed = ((P2 / s) * (1 - abs(R)) - R * K_constant) * -1;
     BR-> move_voltage(BR_speed * 127000 * use_motor * multiplier);
 }
 
@@ -415,11 +411,11 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
             arc_length_error = 0;
         }  
         
-        //ratio between the rotational and translational errors to tell 
+        //ratio between the rotational and translational errors (tells how much motor power to apply to each):
         double R =  MIN((arc_length_error * rotational_KP) / (15 + abs(current_distance_error)), 1); // formula was previously: 0.5 * arc_length_error / (current_distance_error + arc_length_error * 0.5);
         R = constrain(R, -1.0, 1.0);
 
-        //how much motor power to apply to translational (if S = 1 more translation and S = 0 is less translational)
+        //how much motor power to apply to translational (if S = 1 more translation and S = 0 is less translational):
         double S; // OLD no threshold mode -> = MIN(abs(current_distance_error / initial_distance_error) * translational_KP, 1);
         
         if(abs(current_distance_error) < slow_down_distance_threshold)

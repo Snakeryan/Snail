@@ -21,7 +21,10 @@ extern pros::Controller controller;
 extern pros::ADIEncoder encoderL;
 extern pros::ADIEncoder encoderM;
 extern pros::ADIEncoder encoderR;
+
+//sensors:
 extern pros::Imu IMU;
+extern pros::ADIDigitalIn limit_switch;
 
 extern pros::Vision vision_sensor;
 

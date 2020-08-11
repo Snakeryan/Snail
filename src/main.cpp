@@ -155,10 +155,8 @@ void run_macros()
 void displayData()
 {
 	// pros::lcd::initialize();	
-	pros::lcd::set_text(2, "Left: " + std::to_string(encoderL.get_value()));
-	pros::lcd::set_text(3, "Right" + std::to_string(encoderR.get_value()));
-	pros::lcd::set_text(4, "Middle" + std::to_string(encoderM.get_value()));
-	pros::lcd::set_text(5, "IMU " + std::to_string(IMU.get_heading()));
+	pros::lcd::set_text(1, "indexer motor temperature: " + std::to_string(indexer.get_temperature()));
+	pros::lcd::set_text(0, "flywheel motor temperature: " + std::to_string(flywheel.get_temperature()));
 }
 
 void calibrateIMU()
@@ -204,13 +202,14 @@ void color_sorting()
 			if(rtn.signature == 2) //red
 			{
 				flywheel = -127;
+				pros::delay(200);
 			}
 			else if(rtn.signature == 1) // blue
 			{
 				flywheel = 127;
 			} else 
 			{
-				flywheel = 0;
+				flywheel = 127;
 			}
 		}
 		else
@@ -229,6 +228,8 @@ void opcontrol()
 	pros::Task color_sorter(color_sorting);
 	while (true) 
 	{
+		displayData();
+		limit_switch_value();
 		drive();
 		run_macros();
 		pros::delay(20);
