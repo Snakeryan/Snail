@@ -3,6 +3,19 @@
 #include "auton_utils.h"
 #include "globals.h"
 #include "helper.h"
+
+namespace auton_modes
+{
+	enum Auton_mode
+	{
+		odometry = 1,
+		home_row = 2,
+		skills = 3,
+	};
+}
+
+auton_modes::Auton_mode auton_mode = auton_modes::home_row;
+
 void calibrateIMU();
 
 /**
@@ -11,14 +24,115 @@ void calibrateIMU();
  * When this callback is fired, it will toggle line 2 of the LCD text between
  * "I was pressed!" and nothing.
  */
-void on_center_button() {
-	static bool pressed = false;
-	pressed = !pressed;
-	if (pressed) {
-		pros::lcd::set_text(2, "I was pressed!");
-	} else {
-		pros::lcd::clear_line(2);
+
+void on_left_button()
+{
+	// std::cout << "BUTTON PRESSED";
+	// // static bool pressed = false;
+	// // static int autonomous_mode = 0;
+	// // pressed = !pressed;
+	// // if (true)
+	// // {
+	// // 	autonomous_mode++;
+	// // }
+	// if (autonomous_mode == 0)
+	// {
+	// }
+	// else if (autonomous_mode == 1)
+	// {
+	// 	pros::lcd::set_text(0, "you are in mode one of autonomous");
+	// 	pros::delay(5000);
+	// 	// put code for mode one:
+	// 	debug_autonomous();
+	// }
+	// else if (autonomous_mode == 2)
+	// {
+	// 	pros::lcd::set_text(0, "you are in mode two of the autonomous");
+	// 	pros::delay(5000);
+	// 	//put code for mode two:
+	// 	// run one of the autonomous programs
+	// }
+	// else if (autonomous_mode == 3)
+	// {
+	// 	pros::lcd::set_text(0, "you are in mode three of the autonomous");
+	// 	pros::delay(5000);
+	// 	//put code for mode three:
+	// 	// run one of the autonomous programs
+	// }
+	// else
+	// {
+	// 	autonomous_mode = 0;
+	// }
+}
+
+void display_auton_mode()
+{
+	switch (auton_mode)
+	{
+	case auton_modes::odometry:
+		pros::lcd::set_text(0, "odometry mode");
+		break;
+	case auton_modes::home_row:
+		pros::lcd::set_text(0, "home row mode");
+		break;
+	case auton_modes::skills:
+		pros::lcd::set_text(0, "skills mode");
+		break;
+	default:
+		pros::lcd::set_text(0, "no mode selected");
+		break;
 	}
+}
+
+void on_center_button()
+{
+	printf("CENTER BUTTON PRESSED \n");
+	auton_mode = static_cast<auton_modes::Auton_mode>(static_cast<int>(auton_mode) + 1);
+	if (auton_mode > auton_modes::skills)
+	{
+		auton_mode = auton_modes::odometry;
+	}
+	display_auton_mode();
+}
+
+void on_right_button()
+{
+	// printf("RIGHT BUTTON PRESSED");
+	// static bool pressed = false;
+	// static bool prev_pressed = false;
+	// static int number_of_presses = 0;
+	// pressed = !pressed;
+	// if (true)
+	// {
+	// 	number_of_presses++;
+	// }
+	// if (number_of_presses == 0)
+	// {
+	// }
+	// else if (number_of_presses == 1)
+	// {
+	// 	pros::lcd::set_text(0, "you are in mode one of the right button");
+	// 	pros::delay(5000);
+	// 	//put code for mode one:
+	// }
+	// else if (number_of_presses == 2)
+	// {
+	// 	pros::lcd::set_text(0, "you are in mode two of the right button");
+	// 	pros::delay(5000);
+	// 	//put code for mode two:
+	// }
+	// else if (number_of_presses == 3)
+	// {
+	// 	pros::lcd::set_text(0, "you are in mode three of the right button");
+	// 	pros::delay(5000);
+	// 	//put code for mode three:
+	// }
+	// else
+	// {
+	// 	number_of_presses = 0;
+	// }
+	// pros::lcd::set_text(0, "you are in mode: " + std::to_string(number_of_presses));
+	// prev_pressed = pressed;
 }
 
 /**
@@ -27,12 +141,16 @@ void on_center_button() {
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
-void initialize() {
+void initialize()
+{
 	calibrateIMU();
 	pros::lcd::initialize();
-	pros::lcd::set_text(1, "Hello World!");
-
+	printf("INITIALIZED");
+	pros::lcd::register_btn0_cb(on_left_button);
 	pros::lcd::register_btn1_cb(on_center_button);
+	pros::lcd::register_btn2_cb(on_right_button);
+	display_auton_mode();
+	// pros::lcd::set_text(1, "Hello World!");
 }
 
 /**
@@ -51,7 +169,9 @@ void disabled() {}
  * This task will exit when the robot is enabled and autonomous or opcontrol
  * starts.
  */
-void competition_initialize() {}
+void competition_initialize()
+{
+}
 
 /**
  * Runs the user autonomous code. This function will be started in its own task
@@ -67,7 +187,19 @@ void competition_initialize() {}
 
 void autonomous()
 {
-	run_auton();
+	switch (auton_mode)
+	{
+	case auton_modes::odometry:
+		run_odometry_mode();
+		break;
+	case auton_modes::home_row:
+		run_homerow();
+		break;
+	case auton_modes::skills:
+		//put code for a skills run
+		run_skills();
+		break;
+	}
 }
 /**
  * Runs the operator control code. This function will be started in its own task
@@ -83,39 +215,30 @@ void autonomous()
  * task, not resume it from where it left off.
  */
 
-
-
-
 //Helper functions:
-
-
-
-
 
 void setDrive(int F_B, int strafe, int turn)
 {
-    FL = F_B + strafe + (turn);
-    FR = -F_B + strafe + (turn);
-    BR = -F_B - strafe + (turn);
-    BL = F_B - strafe + (turn);
+	FL = F_B + strafe + (turn);
+	FR = -F_B + strafe + (turn);
+	BR = -F_B - strafe + (turn);
+	BL = F_B - strafe + (turn);
 }
-
 
 //driver control functions:
 
 void drive()
 {
 	const int deadzone = 10;
-	
+
 	int Xaxis = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
 	int Yaxis = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
 
 	int turn = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 	// if(abs(Yaxis) < deadzone) Yaxis = 0;
-    // if(abs(Xaxis) < deadzone) Xaxis = 0;
-	
+	// if(abs(Xaxis) < deadzone) Xaxis = 0;
+
 	setDrive(Yaxis, Xaxis, turn);
-	
 }
 //Macros:
 /*
@@ -127,36 +250,35 @@ lower indexers down (R2)
 
 */
 void run_macros()
-{	
+{
 
 	// intake 1 direction
 	// indexer 1 direction
 	// flywheel 2 directions (1 up and 1 do)
-	if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
+	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
 	{
 		setIntake(127);
 	}
-	else 
+	else
 	{
 		setIntake(0);
 	}
-	if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
+	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
 	{
 		// indexer
 		indexer = 127;
-	} else 
+	}
+	else
 	{
 		indexer = 0;
 	}
-	
-	
 }
 //sensors
 void displayData()
 {
-	// pros::lcd::initialize();	
+	// pros::lcd::initialize();
 	pros::lcd::set_text(1, "indexer motor temperature: " + std::to_string(indexer.get_temperature()));
-	pros::lcd::set_text(0, "flywheel motor temperature: " + std::to_string(flywheel.get_temperature()));
+	pros::lcd::set_text(7, "flywheel motor temperature: " + std::to_string(flywheel.get_temperature()));
 }
 
 void calibrateIMU()
@@ -164,50 +286,50 @@ void calibrateIMU()
 	pros::lcd::set_text(5, "Calibrating IMU");
 	IMU.reset();
 
-  	while (IMU.is_calibrating()) 
+	while (IMU.is_calibrating())
 	{
 		pros::delay(10);
 	}
-	
 }
 
 void color_sorting()
 {
-  	pros::vision_signature_s_t BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
-  	pros::vision_signature_s_t RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
+	pros::vision_signature_s_t BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
+	pros::vision_signature_s_t RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
 
-  	vision_sensor.set_signature(1, &BLUE_BALL_SIGNATURE);
+	vision_sensor.set_signature(1, &BLUE_BALL_SIGNATURE);
 	vision_sensor.set_signature(2, &RED_BALL_SIGNATURE);
-	
-	while (true) 
+
+	while (true)
 	{
 		pros::vision_object_s_t rtn = vision_sensor.get_by_size(0);
 		// Gets the largest object of the EXAMPLE_SIG signature
-		pros::lcd::set_text(2, "signature: " + std::to_string(rtn.signature));
+		pros::lcd::set_text(5, "signature: " + std::to_string(rtn.signature));
 		pros::lcd::set_text(3, "w: " + std::to_string(rtn.width));
 		pros::lcd::set_text(4, "h: " + std::to_string(rtn.height));
 		pros::delay(10);
-		if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
+		if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
 		{
 			// flywheel negative, manual dispensing
-			flywheel = -127;
-		} 
-		else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
+			flywheel = -127/2;
+		}
+		else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
 		{
 			//flywheel positive, shooting
 			flywheel = 127;
-		}  
-		else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_A))
+		}
+		else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A))
 		{
-			if(rtn.signature == 2) //red
+			if (rtn.signature == 2) //red
 			{
-				flywheel = -127;
+				flywheel = -127/2;
 				pros::delay(200);
 			}
-			else if(rtn.signature == 1) // blue
+			else if (rtn.signature == 1) // blue
 			{
 				flywheel = 127;
-			} else 
+			}
+			else
 			{
 				flywheel = 127;
 			}
@@ -218,17 +340,14 @@ void color_sorting()
 		}
 		pros::delay(20);
 	}
-
 }
 
-
-
-void opcontrol() 
-{	
+void opcontrol()
+{
 	pros::Task color_sorter(color_sorting);
-	while (true) 
+	while (true)
 	{
-		displayData();
+		// displayData();
 		limit_switch_value();
 		drive();
 		run_macros();

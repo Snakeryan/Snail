@@ -241,8 +241,8 @@ class AutonUtils
     double rad_to_deg(double rad);
 
 /**
- * \note 
  *        this is the formula used by this method: (deg * pi)/180
+ * 
  * \param deg
  *        the degree value that you want to convert to radians
  * \return 
@@ -251,8 +251,8 @@ class AutonUtils
     double deg_to_rad(double deg);
 
 /**
- * \note 
- *        this is the formula used by this method: (left_encoder_distance - right_encoder_distance) / (wL + wR)
+ *  this is the formula used by this method: (left_encoder_distance - right_encoder_distance) / (wL + wR)
+ * 
  * \param right_encoder_distance 
  *        the change in the value of the distance of the right encoder (takes inches)
  * \param left_encoder_distance
@@ -280,9 +280,7 @@ class AutonUtils
 */
     double get_constrained_alpha();
 
-/**
- * \note  
-*/
+
     public:
 /**
  * \param void 
@@ -307,6 +305,7 @@ class AutonUtils
     void point_turn_PID(double target, const double Kp = 37.5, const double Ki = .7, const double Kd = -0, bool use_IMU = false, bool do_once = false);
     void turn_to_point(double X2, double Y2);
     void move_distance(double X2, double Y2);
+
     ~AutonUtils();
 };
 

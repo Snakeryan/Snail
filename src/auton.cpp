@@ -35,7 +35,7 @@ void auton_color_sorting()
 
             if (rtn.signature == 2) //red
             {
-                flywheel = -127;
+                flywheel = -127/2;
                 pros::delay(200);
             }
             else if (rtn.signature == 1) // blue
@@ -65,7 +65,7 @@ void ball_counter()
 {
     int prev_limit_value = 0;
     while (true)
-    {  
+    {
         if (limit_switch.get_value() == 1 && prev_limit_value == 0)
         {
             balls_counted++;
@@ -74,6 +74,18 @@ void ball_counter()
         prev_limit_value = limit_switch.get_value();
         pros::Task::delay(20);
     }
+}
+void run_odometry_mode()
+{
+    autonutils.make_update_thread();
+    while(true)
+    {
+        // autonutils.update();
+
+        pros::lcd::set_text(1, "coordinates: (" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")");
+        pros::lcd::set_text(2, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
+        pros::delay(10);
+    } 
 }
 
 void stop()
@@ -84,7 +96,7 @@ void stop()
     BR = 0;
 }
 
-void run_auton()
+void run_homerow()
 {
     autonutils.make_update_thread();
     pros::Task color_sorter(auton_color_sorting);
@@ -98,16 +110,16 @@ void run_auton()
     autonutils.drive_to_point(0, -15, 45, false, true);
 
     // First Goal
-    autonutils.drive_to_point(17.7, -5.9, 46, false, false);
+    autonutils.drive_to_point(16.2, -6.7, 46, false, false);
     sort_balls = true;
     stop();
 
     score(127, 127);
-    while (balls_counted < 2)
+    while (balls_counted < 3)
     {
         pros::delay(10);
     }
-    setIntake(0);
+    setIntake(-31);
     pros::delay(500);
 
     // Waypoint to second goal
@@ -117,4 +129,8 @@ void run_auton()
     autonutils.drive_to_point(-37.1, -23.7, 0, false, true);
     autonutils.drive_to_point(-37.5, -9.6, 0, false, false);
     stop();
+}
+
+void run_skills()
+{
 }
