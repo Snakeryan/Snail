@@ -2,11 +2,11 @@
 #include "auton.h"
 #include "auton_utils.h"
 #include "helper.h"
+#include "globals.h"
 
 bool sort_balls = false;
-int balls_counted = 0;
-
-AutonUtils autonutils(1.375, 6.86024, 6.86024, 6.86024, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM);
+int lower_balls_counted = 0;
+int upper_balls_counted = 0;
 
 void score(int flywheel_power, int indexer_power)
 {
@@ -33,12 +33,12 @@ void auton_color_sorting()
             pros::lcd::set_text(4, "h: " + std::to_string(rtn.height));
             pros::delay(10);
 
-            if (rtn.signature == 2) //red
+            if (rtn.signature == 1) //blue
             {
-                flywheel = -127/2;
+                flywheel = -127 / 2;
                 pros::delay(200);
             }
-            else if (rtn.signature == 1) // blue
+            else if (rtn.signature == 2) // red
             {
                 flywheel = 127;
             }
@@ -57,35 +57,64 @@ void debug_autonomous()
     {
         pros::lcd::set_text(1, "coordinates: (" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")");
         pros::lcd::set_text(2, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
+        pros::lcd::set_text(3, "lower ball counter value:" + std::to_string(lower_balls_counted));
+        pros::lcd::set_text(4, "upper ball counter value:" + std::to_string(upper_balls_counted));
         pros::Task::delay(10);
     }
 }
 
-void ball_counter()
+void lower_ball_counter()
 {
     int prev_limit_value = 0;
     while (true)
     {
         if (limit_switch.get_value() == 1 && prev_limit_value == 0)
         {
-            balls_counted++;
+            lower_balls_counted++;
         }
         // pros::lcd::set_text(6, "the limit switch value is: " + std::to_string(limit_value));
         prev_limit_value = limit_switch.get_value();
         pros::Task::delay(20);
     }
 }
+
+void upper_ball_counter()
+{
+    int delta_light_sensor_value;
+    int prev_light_value = light_sensor.get_value();
+    while (true)
+    {
+        int light_sensor_value = light_sensor.get_value();
+        delta_light_sensor_value = prev_light_value - light_sensor_value;
+        if (delta_light_sensor_value < -80)
+        {
+            upper_balls_counted++;
+        }
+        // pros::lcd::set_text(6, "the limit switch value is: " + std::to_string(limit_value));
+        prev_light_value = light_sensor_value;
+        pros::Task::delay(20);
+    }
+}
+
 void run_odometry_mode()
 {
-    autonutils.make_update_thread();
-    while(true)
+    pros::Task lower_ball_counter_task(lower_ball_counter);
+    pros::Task upper_ball_counter_task(upper_ball_counter);
+    autonutils.set_current_global_position(0, 0, 0);
+
+    while (true)
     {
+
         // autonutils.update();
 
         pros::lcd::set_text(1, "coordinates: (" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")");
         pros::lcd::set_text(2, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
+        pros::lcd::set_text(3, "lower ball counter value:" + std::to_string(lower_balls_counted));
+        pros::lcd::set_text(4, "upper ball counter value:" + std::to_string(upper_balls_counted));
+        pros::lcd::set_text(5, "light sensor value:" + std::to_string(light_sensor.get_value()));
+
         pros::delay(10);
-    } 
+    }
 }
 
 void stop()
@@ -98,13 +127,12 @@ void stop()
 
 void run_homerow()
 {
-    autonutils.make_update_thread();
     pros::Task color_sorter(auton_color_sorting);
     pros::Task autonomous_debugger(debug_autonomous);
-    pros::Task ball_counter_task(ball_counter);
+    pros::Task lower_ball_counter_task(lower_ball_counter);
+    pros::Task upper_ball_counter_task(upper_ball_counter);
 
     pros::lcd::set_text(0, "Autonomous Mode ");
-    autonutils.set_current_global_position(0, 0, 0);
 
     setIntake(127);
     autonutils.drive_to_point(0, -15, 45, false, true);
@@ -115,7 +143,7 @@ void run_homerow()
     stop();
 
     score(127, 127);
-    while (balls_counted < 3)
+    while (lower_balls_counted < 3)
     {
         pros::delay(10);
     }
@@ -133,4 +161,15 @@ void run_homerow()
 
 void run_skills()
 {
+    pros::Task color_sorter(auton_color_sorting);
+    pros::Task autonomous_debugger(debug_autonomous);
+    pros::Task lower_ball_counter_task(lower_ball_counter);
+    pros::Task upper_ball_counter_task(upper_ball_counter);
+
+    autonutils.set_current_global_position(0, 0, 0);
+    setIntake(127);
+    autonutils.drive_to_point(0.96, 61.97, 270.00, false, true);
+    autonutils.drive_to_point(-21.51, 62.87, 270, false, false);
+    // sort_balls = true;
+    // score(127, 127)
 }

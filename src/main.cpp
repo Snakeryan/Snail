@@ -14,7 +14,7 @@ namespace auton_modes
 	};
 }
 
-auton_modes::Auton_mode auton_mode = auton_modes::home_row;
+auton_modes::Auton_mode auton_mode = auton_modes::skills;
 
 void calibrateIMU();
 
@@ -143,9 +143,10 @@ void on_right_button()
  */
 void initialize()
 {
+	light_sensor.calibrate();
 	calibrateIMU();
+	autonutils.make_update_thread();
 	pros::lcd::initialize();
-	printf("INITIALIZED");
 	pros::lcd::register_btn0_cb(on_left_button);
 	pros::lcd::register_btn1_cb(on_center_button);
 	pros::lcd::register_btn2_cb(on_right_button);
@@ -255,6 +256,7 @@ void run_macros()
 	// intake 1 direction
 	// indexer 1 direction
 	// flywheel 2 directions (1 up and 1 do)
+	long ball_brightness_threshold = 2720;
 	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
 	{
 		setIntake(127);
@@ -263,11 +265,15 @@ void run_macros()
 	{
 		setIntake(0);
 	}
-	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
+	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) // && !(light_sensor.get_value() < ball_brightness_threshold && controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)))
 	{
 		// indexer
 		indexer = 127;
 	}
+	// else if (light_sensor.get_value() < ball_brightness_threshold && controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
+	// {
+	// 	indexer = 0;
+	// }
 	else
 	{
 		indexer = 0;
@@ -276,9 +282,55 @@ void run_macros()
 //sensors
 void displayData()
 {
-	// pros::lcd::initialize();
-	pros::lcd::set_text(1, "indexer motor temperature: " + std::to_string(indexer.get_temperature()));
-	pros::lcd::set_text(7, "flywheel motor temperature: " + std::to_string(flywheel.get_temperature()));
+	int line_number_to_set_text = 3;
+	bool prev_B_button_value = false;
+	while (true)
+	{
+		pros::lcd::set_text(0, "coordinates: (" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")");
+		pros::lcd::set_text(1, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
+		pros::lcd::set_text(2, "light sensor value: " + std::to_string(light_sensor.get_value()));
+		if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B) && prev_B_button_value == false)
+		{
+			pros::lcd::set_text(line_number_to_set_text, "(" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")" + "; " + std::to_string(autonutils.get_alpha_in_degrees()));
+			line_number_to_set_text++;
+		}
+		if (line_number_to_set_text > 5)
+		{
+			line_number_to_set_text = 3;
+		}
+
+		prev_B_button_value = controller.get_digital(pros::E_CONTROLLER_DIGITAL_B);
+		pros::Task::delay(20);
+	}
+	// // // pros::lcd::initialize();
+	// // pros::lcd::set_text(1, "indexer motor temperature: " + std::to_string(indexer.get_temperature()));
+	// // pros::lcd::set_text(7, "flywheel motor temperature: " + std::to_string(flywheel.get_temperature()));
+	// // pros::lcd::set_text(4, "light sensor value: " + std::to_string(light_sensor.get_value()));
+	// int prev_limit_value = 0;
+	// int lower_balls_counted = 0;
+	// int upper_balls_counted = 0;
+	// int delta_light_sensor_value;
+	// int prev_light_value = light_sensor.get_value();
+	// int prev_time = pros::millis();
+	// while (true)
+	// {
+	// 	if (limit_switch.get_value() == 1 && prev_limit_value == 0)
+	// 	{
+	// 		lower_balls_counted++;
+	// 	}
+
+	// 	// pros::lcd::set_text(6, "the limit switch value is: " + std::to_string(limit_value));
+	// 	prev_limit_value = limit_switch.get_value();
+
+	// 	int light_sensor_value = light_sensor.get_value();
+	// 	delta_light_sensor_value = prev_light_value - light_sensor_value;
+	// 	if (delta_light_sensor_value < -200 && pros::millis() - prev_time > 250)
+	// 	{
+	// 		upper_balls_counted++;
+	// 		prev_time = pros::millis();
+	// 	}
+	// 	// pros::lcd::set_text(6, "the limit switch value is: " + std::to_string(limit_value));
+	// 	prev_light_value = light_sensor_value;
 }
 
 void calibrateIMU()
@@ -304,14 +356,14 @@ void color_sorting()
 	{
 		pros::vision_object_s_t rtn = vision_sensor.get_by_size(0);
 		// Gets the largest object of the EXAMPLE_SIG signature
-		pros::lcd::set_text(5, "signature: " + std::to_string(rtn.signature));
-		pros::lcd::set_text(3, "w: " + std::to_string(rtn.width));
-		pros::lcd::set_text(4, "h: " + std::to_string(rtn.height));
+		// pros::lcd::set_text(5, "signature: " + std::to_string(rtn.signature));
+		// pros::lcd::set_text(3, "w: " + std::to_string(rtn.width));
+		// pros::lcd::set_text(4, "h: " + std::to_string(rtn.height));
 		pros::delay(10);
 		if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
 		{
 			// flywheel negative, manual dispensing
-			flywheel = -127/2;
+			flywheel = -127 / 2;
 		}
 		else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
 		{
@@ -322,7 +374,8 @@ void color_sorting()
 		{
 			if (rtn.signature == 2) //red
 			{
-				flywheel = -127/2;
+				flywheel = -127 / 2;
+				indexer = 127;
 				pros::delay(200);
 			}
 			else if (rtn.signature == 1) // blue
@@ -345,9 +398,9 @@ void color_sorting()
 void opcontrol()
 {
 	pros::Task color_sorter(color_sorting);
+	pros::Task balls_counted(displayData);
 	while (true)
 	{
-		// displayData();
 		limit_switch_value();
 		drive();
 		run_macros();

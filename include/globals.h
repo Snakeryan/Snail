@@ -1,6 +1,10 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 #include "main.h"
+#include "auton_utils.h"
+
+//object of class autonUtils
+extern AutonUtils autonutils;
 
 //motors:
 extern pros::Motor intakeleft;
@@ -25,8 +29,10 @@ extern pros::ADIEncoder encoderR;
 //sensors:
 extern pros::Imu IMU;
 extern pros::ADIDigitalIn limit_switch;
+extern pros::ADIAnalogIn light_sensor;
 
 extern pros::Vision vision_sensor;
+
 
 // extern bool is_autonomous;
 #endif 
