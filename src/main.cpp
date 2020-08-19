@@ -1,10 +1,10 @@
-#include "main.h"
+a #include "main.h"
 #include "auton.h"
 #include "auton_utils.h"
 #include "globals.h"
 #include "helper.h"
 
-namespace auton_modes
+	namespace auton_modes
 {
 	enum Auton_mode
 	{
@@ -256,19 +256,28 @@ void run_macros()
 	// intake 1 direction
 	// indexer 1 direction
 	// flywheel 2 directions (1 up and 1 do)
-	long ball_brightness_threshold = 2720;
+	long ball_brightness_threshold = 2000;
 	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
 	{
 		setIntake(127);
+	}
+	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN))
+	{
+		setIntake(-63);
 	}
 	else
 	{
 		setIntake(0);
 	}
-	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) // && !(light_sensor.get_value() < ball_brightness_threshold && controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)))
+
+	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2) && (!(light_sensor.get_value() < ball_brightness_threshold && controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))))
 	{
 		// indexer
 		indexer = 127;
+	}
+	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B))
+	{
+		indexer = -127;
 	}
 	// else if (light_sensor.get_value() < ball_brightness_threshold && controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
 	// {
@@ -282,14 +291,16 @@ void run_macros()
 //sensors
 void displayData()
 {
-	int line_number_to_set_text = 3;
-	bool prev_B_button_value = false;
+	int line_number_to_set_text = 5;
+	bool prev_LEFT_button_value = false;
 	while (true)
 	{
 		pros::lcd::set_text(0, "coordinates: (" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")");
 		pros::lcd::set_text(1, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
 		pros::lcd::set_text(2, "light sensor value: " + std::to_string(light_sensor.get_value()));
-		if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B) && prev_B_button_value == false)
+		pros::lcd::set_text(3, std::to_string((int)indexer.get_temperature()) + "; " + std::to_string((int)flywheel.get_temperature()));
+		pros::lcd::set_text(4, std::to_string((int)FL.get_temperature()) + "; " + std::to_string((int)FR.get_temperature()) + "; " + std::to_string((int)BL.get_temperature()) + "; " + std::to_string((int)BR.get_temperature()));
+		if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B) && prev_LEFT_button_value == false)
 		{
 			pros::lcd::set_text(line_number_to_set_text, "(" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")" + "; " + std::to_string(autonutils.get_alpha_in_degrees()));
 			line_number_to_set_text++;
@@ -299,7 +310,7 @@ void displayData()
 			line_number_to_set_text = 3;
 		}
 
-		prev_B_button_value = controller.get_digital(pros::E_CONTROLLER_DIGITAL_B);
+		prev_LEFT_button_value = controller.get_digital(pros::E_CONTROLLER_DIGITAL_B);
 		pros::Task::delay(20);
 	}
 	// // // pros::lcd::initialize();
@@ -352,18 +363,19 @@ void color_sorting()
 	vision_sensor.set_signature(1, &BLUE_BALL_SIGNATURE);
 	vision_sensor.set_signature(2, &RED_BALL_SIGNATURE);
 
+	double prev_time = pros::millis();
 	while (true)
 	{
 		pros::vision_object_s_t rtn = vision_sensor.get_by_size(0);
 		// Gets the largest object of the EXAMPLE_SIG signature
-		// pros::lcd::set_text(5, "signature: " + std::to_string(rtn.signature));
+		pros::lcd::set_text(5, "signature: " + std::to_string(rtn.signature));
 		// pros::lcd::set_text(3, "w: " + std::to_string(rtn.width));
 		// pros::lcd::set_text(4, "h: " + std::to_string(rtn.height));
 		pros::delay(10);
 		if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
 		{
 			// flywheel negative, manual dispensing
-			flywheel = -127 / 2;
+			flywheel = -127;
 		}
 		else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
 		{
@@ -372,15 +384,19 @@ void color_sorting()
 		}
 		else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A))
 		{
-			if (rtn.signature == 2) //red
+			if (rtn.signature == 1) //red
 			{
-				flywheel = -127 / 2;
-				indexer = 127;
-				pros::delay(200);
+				while (abs(prev_time - pros::millis()) < 100)
+				{
+					flywheel = -127;
+					// indexer = 127;
+				}
+				prev_time = pros::millis();
 			}
-			else if (rtn.signature == 1) // blue
+			else if (rtn.signature == 2) // blue
 			{
 				flywheel = 127;
+				// indexer = 127;
 			}
 			else
 			{

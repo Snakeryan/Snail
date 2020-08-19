@@ -63,6 +63,17 @@ void debug_autonomous()
     }
 }
 
+void go_home()
+{
+    while (true)
+    {
+        if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_X))
+        {
+            autonutils.drive_to_point(0, 0, 0, true, false);
+        }
+    }
+}
+
 void lower_ball_counter()
 {
     int prev_limit_value = 0;
@@ -165,6 +176,7 @@ void run_skills()
     pros::Task autonomous_debugger(debug_autonomous);
     pros::Task lower_ball_counter_task(lower_ball_counter);
     pros::Task upper_ball_counter_task(upper_ball_counter);
+    pros::Task return_home(go_home);
 
     autonutils.set_current_global_position(0, 0, 0);
     setIntake(127);
