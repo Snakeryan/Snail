@@ -1,45 +1,7 @@
 #include <iostream>
-// #include <ctime>
 #include "main.h"
 #include "auton.h"
 #include "globals.h"
-//must have:
-/*
-turn function that makes the robot's motors turn
-PID loop function that has arguments inputs that are the k constants and returns the value of the PID 
-*/
-
-// PID function
-/*
-this function should have error, derivative, and integral variables
-the error variable should equal the proportional control or:    the target angle - the current angle
-the derivative variable should eqaul the slope of the time vs error graph or: 
-previous error - current error/ previous time - current time
-the integral variable should equal the area of the time vs error graph or
-previous integral value + ∆t * error
-the function will also run the turn function and have its input as:
-turn(error * Kp + derivative * Kd + integral * Ki)
-*/
-
-//path to take:
-/*
-I want the robot to turn in the optimal direction
-for example, if the ange is 90 degrees from 0 degrees you would want the robot to turn 90 degrees and not 270 degrees
-so, if the degrees < 180, then turn negative degrees, else turn positive degrees
-*/
-
-//optionals:
-/*
-have a vector that keeps track of all the errors and can be accessed
-*/
-
-//constructer to tell
-/*
-1. the width of the center of the robot to the left, right, and back encoders
-2. the pros motors you are using (these are passed by pointer)
-3. the encoders you are using (these are also passed by pointer) 
-this makes the program modular:
-*/
 
 //motion profiling functions:
 /*
@@ -82,10 +44,11 @@ AutonUtils::AutonUtils(double encoder_wheel_radius, double wL, double wR, double
     this->encoderL = encoderL;
     this->encoderR = encoderR;
     this->encoderM = encoderM;
-    // globalX = 0;
-    // Dlx = 0;
-    // globalY = 0;
-    // Dly = 0;
+}
+
+double AutonUtils::compute_alpha(double right_encoder_distance, double left_encoder_distance)
+{
+    return (left_encoder_distance - right_encoder_distance) / (wL + wR);
 }
 
 //method to convert from encoder ticks to wheels for all of the encoder wheels
@@ -152,7 +115,7 @@ double AutonUtils::compute_delta_globalY(double Dlx, double Dly, double delta_al
     return (Dly * cos(delta_alpha / 2 + prev_alpha)) - (Dlx * sin(delta_alpha / 2 + prev_alpha));
 }
 
-double AutonUtils::rad_to_deg_wraped(double rad)
+double AutonUtils::convert_rad_to_deg_wraped(double rad)
 {
     double deg = (rad * 180) / pi;
 
@@ -165,39 +128,27 @@ double AutonUtils::rad_to_deg_wraped(double rad)
     return deg;
 }
 
-double AutonUtils::rad_to_deg(double rad)
+double AutonUtils::convert_rad_to_deg(double rad)
 {
     return (rad * 180) / pi;
 }
 
 double AutonUtils::get_alpha_in_degrees()
 {
-    return rad_to_deg_wraped(alpha);
+    return convert_rad_to_deg_wraped(alpha);
 }
 
 //method to convert from degrees to radians
 //formula is 1deg * π/180:
-double AutonUtils::deg_to_rad(double deg)
+double AutonUtils::convert_deg_to_rad(double deg)
 {
     return (deg * pi) / 180;
-}
-
-void AutonUtils::turn_to_point(double destX, double destY)
-{
-    double angle = atan2(destX - globalX, destY - globalY);
-    // pros::lcd::set_text(0, "the angle to turn is: " + std::to_string(rad_to_deg(angle)));
-    if (angle < 0)
-    {
-        angle += TAU;
-    }
-    pros::lcd::set_text(0, "the angle to turn is: " + std::to_string(rad_to_deg_wraped(angle)));
-    point_turn_PID(angle);
 }
 
 //method to update functions:
 void AutonUtils::update()
 {
-    update_mutex.take(1000);
+    update_odometry_mutex.take(1000);
     double left_encoder_distance = get_left_encoder_distance();
     double delta_left_encoder_distance = left_encoder_distance - prev_left_encoder_distance;
 
@@ -223,18 +174,28 @@ void AutonUtils::update()
     prev_right_encoder_distance = right_encoder_distance;
     prev_middle_encoder_distance = middle_encoder_distance;
     prev_alpha = alpha;
-    update_mutex.give();
+    update_odometry_mutex.give();
 }
 
-double AutonUtils::get_constrained_alpha()
+void AutonUtils::set_current_global_position(double new_X, double new_Y, double new_alpha_in_degrees)
 {
-    double theta = alpha;
-    theta = fmod(theta, TAU);
-    if (theta < 0)
+    update_odometry_mutex.take(1000);
+    globalX = new_X;
+    globalY = new_Y;
+    prev_alpha = convert_deg_to_rad(new_alpha_in_degrees);
+    alpha = prev_alpha;
+    update_odometry_mutex.give();
+}
+
+void AutonUtils::turn_to_point(double destX, double destY)
+{
+    double angle = atan2(destX - globalX, destY - globalY);
+    if (angle < 0)
     {
-        theta += TAU;
+        angle += TAU;
     }
-    return theta;
+    pros::lcd::set_text(0, "the angle to turn is: " + std::to_string(convert_rad_to_deg_wraped(angle)));
+    point_turn_PID(angle);
 }
 
 /*
@@ -307,37 +268,33 @@ void AutonUtils::compute_BR_motor_speed(double P2, double s, double K_constant, 
     BR->move_voltage(BR_speed * 127000 * use_motor * multiplier);
 }
 
-void AutonUtils::start_update_thread()
-{
-    while (true)
-    {
-        update();
-        pros::Task::delay(10);
-    }
-}
-
-void AutonUtils::make_update_thread()
-{
-
-    // pros::Task update_task([this] {start_update_thread(); });
-    task = std::make_shared<pros::Task>([this] { start_update_thread(); });
-}
-
-void AutonUtils::set_current_global_position(double new_X, double new_Y, double new_alpha_in_degrees)
-{
-    update_mutex.take(1000);
-    globalX = new_X;
-    globalY = new_Y;
-    prev_alpha = deg_to_rad(new_alpha_in_degrees);
-    alpha = prev_alpha;
-    update_mutex.give();
-}
 void AutonUtils::set_turn(int turn)
 {
     FL->move_voltage(turn * 1000);
     FR->move_voltage(turn * 1000);
     BR->move_voltage(turn * 1000);
     BL->move_voltage(turn * 1000);
+}
+
+double AutonUtils::compute_error(double target, double current_angle)
+{
+    double error = current_angle - target;
+    if (error < -pi)
+    {
+        return -(error + TAU);
+    }
+    else if (error >= -pi && error <= 0)
+    {
+        return abs(error);
+    }
+    else if (error > 0 && error < pi)
+    {
+        return -error;
+    }
+    else
+    {
+        return abs(error - TAU);
+    }
 }
 
 // function to drive to a point with and without turning:
@@ -366,14 +323,10 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
     double initial_distance_error = sqrt(pow(tX - globalX, 2) + pow(tY - globalY, 2));
 
     //changing the target angle to radians:
-    double target_angle = deg_to_rad(target_angle_in_degrees);
+    double target_angle = convert_deg_to_rad(target_angle_in_degrees);
 
     //declaring all of the error variables:
-    double prev_angle_error;
-    double prev_distance_error;
-    double current_distance_error;
-    double angle_error;
-    double accumulated_error;
+    double prev_angle_error, prev_distance_error, current_distance_error, angle_error, accumulated_error;
 
     do
     {
@@ -435,8 +388,8 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
         //debugging:
         pros::lcd::set_text(3, "distance error: " + std::to_string(current_distance_error));
         pros::lcd::set_text(4, "R: " + std::to_string(R));
-        pros::lcd::set_text(5, "the error angle: " + std::to_string(rad_to_deg(angle_error)));
-        pros::lcd::set_text(6, "alpha: " + std::to_string(rad_to_deg(alpha)));
+        pros::lcd::set_text(5, "the error angle: " + std::to_string(convert_rad_to_deg(angle_error)));
+        pros::lcd::set_text(6, "alpha: " + std::to_string(convert_rad_to_deg(alpha)));
         pros::lcd::set_text(7, "coordinates: (" + std::to_string(globalX) + ", " + std::to_string(globalY) + ")");
 
         //setting the previous values of the translational and rotational errors
@@ -463,7 +416,7 @@ void AutonUtils::point_turn_PID(double target, const double Kp, const double Ki,
     {
         if (use_IMU)
         {
-            error = compute_error(target, deg_to_rad(IMU.get_heading()));
+            error = compute_error(target, convert_deg_to_rad(IMU.get_heading()));
         }
         else
         {
@@ -486,12 +439,12 @@ void AutonUtils::point_turn_PID(double target, const double Kp, const double Ki,
 
         set_turn(error * Kp + integral * Ki + derivative * Kd);
 
-        pros::lcd::set_text(6, "the error is: " + std::to_string(error * 180 / pi));
-        pros::lcd::set_text(7, "the target is: " + std::to_string(rad_to_deg_wraped(target)));
-        pros::lcd::set_text(4, "the derivative is: " + std::to_string(derivative));
-        pros::lcd::set_text(3, "the integral is: " + std::to_string(accumulated_error));
-        pros::lcd::set_text(5, "PID value is: " + std::to_string(error * Kp + integral * Ki + derivative * Kd));
-        pros::lcd::set_text(2, "alpha is: " + std::to_string(get_alpha_in_degrees()));
+        // pros::lcd::set_text(6, "the error is: " + std::to_string(error * 180 / pi));
+        // pros::lcd::set_text(7, "the target is: " + std::to_string(convert_rad_to_deg_wraped(target)));
+        // pros::lcd::set_text(4, "the derivative is: " + std::to_string(derivative));
+        // pros::lcd::set_text(3, "the integral is: " + std::to_string(accumulated_error));
+        // pros::lcd::set_text(5, "PID value is: " + std::to_string(error * Kp + integral * Ki + derivative * Kd));
+        // pros::lcd::set_text(2, "alpha is: " + std::to_string(get_alpha_in_degrees()));
 
         previous_error = error;
 
@@ -502,53 +455,18 @@ void AutonUtils::point_turn_PID(double target, const double Kp, const double Ki,
     pros::lcd::set_text(0, "pid escaped");
 }
 
-double AutonUtils::compute_error(double target, double current_angle)
+void AutonUtils::start_update_thread()
 {
-    double error = current_angle - target;
-    if (error < -pi)
+    while (true)
     {
-        return -(error + TAU);
+        update();
+        pros::Task::delay(10);
     }
-    else if (error >= -pi && error <= 0)
-    {
-        return abs(error);
-    }
-    else if (error > 0 && error < pi)
-    {
-        return -error;
-    }
-    else
-    {
-        return abs(error - TAU);
-    }
-
-    // double error;
-
-    // if (abs(target - current_angle) < abs(target - TAU - current_angle))
-    // {
-    //     error = target - current_angle; // No zero cross
-    // }
-
-    // else if (error > pi)
-    // {
-    //     error = error -TAU;
-    // }
-
-    // else if (error < -pi)
-    // {
-    //     error = error + TAU;
-    // }
-    // else
-    // {
-    //     error = target - TAU - current_angle; // Zero cross
-    // }
-
-    // return error;
 }
 
-double AutonUtils::compute_alpha(double right_encoder_distance, double left_encoder_distance)
+void AutonUtils::make_update_thread()
 {
-    return (left_encoder_distance - right_encoder_distance) / (wL + wR);
+    task = std::make_shared<pros::Task>([this] { start_update_thread(); });
 }
 
 //getter for globalX:
@@ -558,7 +476,18 @@ double AutonUtils::get_globalX()
     return globalX;
 }
 
-// //getter for globalY
+double AutonUtils::get_constrained_alpha()
+{
+    double theta = alpha;
+    theta = fmod(theta, TAU);
+    if (theta < 0)
+    {
+        theta += TAU;
+    }
+    return theta;
+}
+
+//getter for globalY
 
 double AutonUtils::get_globalY()
 {

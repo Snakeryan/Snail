@@ -1,52 +1,51 @@
 #include "main.h"
 #include "auton.h"
 #include "auton_utils.h"
-#include "helper.h"
 #include "globals.h"
 
-bool sort_balls = false;
 int lower_balls_counted = 0;
 int upper_balls_counted = 0;
 
-void score(int flywheel_power, int indexer_power)
+void set_intake(int power)
+{
+    intakeleft = power;
+    intakeright = power;
+}
+
+void set_flywheel_and_indexer(int flywheel_power, int indexer_power)
 {
     flywheel = flywheel_power;
     indexer = indexer_power;
 }
 
-void auton_color_sorting()
+void run_auton_sensors()
 {
-    pros::vision_signature_s_t BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
-    pros::vision_signature_s_t RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
-
-    vision_sensor.set_signature(1, &BLUE_BALL_SIGNATURE);
-    vision_sensor.set_signature(2, &RED_BALL_SIGNATURE);
-
+    int prev_limit_value = 0;
+    int delta_light_sensor_value;
+    int prev_light_value = light_sensor.get_value();
     while (true)
     {
-        if (sort_balls)
-        {
-            pros::vision_object_s_t rtn = vision_sensor.get_by_size(0);
-            // Gets the largest object of the EXAMPLE_SIG signature
-            pros::lcd::set_text(2, "signature: " + std::to_string(rtn.signature));
-            pros::lcd::set_text(3, "w: " + std::to_string(rtn.width));
-            pros::lcd::set_text(4, "h: " + std::to_string(rtn.height));
-            pros::delay(10);
 
-            if (rtn.signature == 1) //blue
-            {
-                flywheel = -127 / 2;
-                pros::delay(200);
-            }
-            else if (rtn.signature == 2) // red
-            {
-                flywheel = 127;
-            }
-            else
-            {
-                flywheel = 127;
-            }
+        if (limit_switch.get_value() == 1 && prev_limit_value == 0)
+        {
+            lower_balls_counted++;
         }
+
+        prev_limit_value = limit_switch.get_value();
+
+        int light_sensor_value = light_sensor.get_value();
+        delta_light_sensor_value = prev_light_value - light_sensor_value;
+        if (delta_light_sensor_value < -80)
+        {
+            upper_balls_counted++;
+        }
+
+        prev_light_value = light_sensor_value;
+
+        pros::lcd::set_text(3, "lower counter: " + std::to_string(lower_balls_counted));
+        pros::lcd::set_text(4, "upper counter: " + std::to_string(upper_balls_counted));
+        pros::lcd::set_text(6, "limit: " + std::to_string(lower_balls_counted));
+
         pros::Task::delay(10);
     }
 }
@@ -55,10 +54,8 @@ void debug_autonomous()
 {
     while (true)
     {
-        pros::lcd::set_text(1, "coordinates: (" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")");
+        pros::lcd::set_text(1, "x, y: (" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")");
         pros::lcd::set_text(2, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
-        pros::lcd::set_text(3, "lower ball counter value:" + std::to_string(lower_balls_counted));
-        pros::lcd::set_text(4, "upper ball counter value:" + std::to_string(upper_balls_counted));
         pros::Task::delay(10);
     }
 }
@@ -67,68 +64,14 @@ void go_home()
 {
     while (true)
     {
-        if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_X))
+        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X))
         {
             autonutils.drive_to_point(0, 0, 0, true, false);
         }
     }
 }
 
-void lower_ball_counter()
-{
-    int prev_limit_value = 0;
-    while (true)
-    {
-        if (limit_switch.get_value() == 1 && prev_limit_value == 0)
-        {
-            lower_balls_counted++;
-        }
-        // pros::lcd::set_text(6, "the limit switch value is: " + std::to_string(limit_value));
-        prev_limit_value = limit_switch.get_value();
-        pros::Task::delay(20);
-    }
-}
-
-void upper_ball_counter()
-{
-    int delta_light_sensor_value;
-    int prev_light_value = light_sensor.get_value();
-    while (true)
-    {
-        int light_sensor_value = light_sensor.get_value();
-        delta_light_sensor_value = prev_light_value - light_sensor_value;
-        if (delta_light_sensor_value < -80)
-        {
-            upper_balls_counted++;
-        }
-        // pros::lcd::set_text(6, "the limit switch value is: " + std::to_string(limit_value));
-        prev_light_value = light_sensor_value;
-        pros::Task::delay(20);
-    }
-}
-
-void run_odometry_mode()
-{
-    pros::Task lower_ball_counter_task(lower_ball_counter);
-    pros::Task upper_ball_counter_task(upper_ball_counter);
-    autonutils.set_current_global_position(0, 0, 0);
-
-    while (true)
-    {
-
-        // autonutils.update();
-
-        pros::lcd::set_text(1, "coordinates: (" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")");
-        pros::lcd::set_text(2, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
-        pros::lcd::set_text(3, "lower ball counter value:" + std::to_string(lower_balls_counted));
-        pros::lcd::set_text(4, "upper ball counter value:" + std::to_string(upper_balls_counted));
-        pros::lcd::set_text(5, "light sensor value:" + std::to_string(light_sensor.get_value()));
-
-        pros::delay(10);
-    }
-}
-
-void stop()
+void stop_drive_motors()
 {
     FL = 0;
     FR = 0;
@@ -138,50 +81,71 @@ void stop()
 
 void run_homerow()
 {
-    pros::Task color_sorter(auton_color_sorting);
     pros::Task autonomous_debugger(debug_autonomous);
-    pros::Task lower_ball_counter_task(lower_ball_counter);
-    pros::Task upper_ball_counter_task(upper_ball_counter);
 
-    pros::lcd::set_text(0, "Autonomous Mode ");
-
-    setIntake(127);
+    set_intake(127);
     autonutils.drive_to_point(0, -15, 45, false, true);
 
     // First Goal
     autonutils.drive_to_point(16.2, -6.7, 46, false, false);
-    sort_balls = true;
-    stop();
+    auto_sort_balls = true;
+    stop_drive_motors();
 
-    score(127, 127);
+    set_flywheel_and_indexer(127, 127);
     while (lower_balls_counted < 3)
     {
         pros::delay(10);
     }
-    setIntake(-31);
+    set_intake(-31);
     pros::delay(500);
 
     // Waypoint to second goal
-    // sort_balls = false;
-    score(0, 0);
-    setIntake(0);
+    // auto_sort_balls = false;
+    set_flywheel_and_indexer(0, 0);
+    set_intake(0);
     autonutils.drive_to_point(-37.1, -23.7, 0, false, true);
     autonutils.drive_to_point(-37.5, -9.6, 0, false, false);
-    stop();
+    stop_drive_motors();
+
+    go_home();
 }
 
 void run_skills()
 {
-    pros::Task color_sorter(auton_color_sorting);
     pros::Task autonomous_debugger(debug_autonomous);
-    pros::Task lower_ball_counter_task(lower_ball_counter);
-    pros::Task upper_ball_counter_task(upper_ball_counter);
-    pros::Task return_home(go_home);
 
     autonutils.set_current_global_position(0, 0, 0);
-    setIntake(127);
+    set_intake(127);
     autonutils.drive_to_point(0.96, 61.97, 270.00, false, true);
     autonutils.drive_to_point(-21.51, 62.87, 270, false, false);
-    // sort_balls = true;
-    // score(127, 127)
+    // auto_sort_balls = true;
+    // set_flywheel_and_indexer(127, 127)
+
+    go_home();
+}
+
+/**
+ * Runs the user autonomous code. This function will be started in its own task
+ * with the default priority and stack size whenever the robot is enabled via
+ * the Field Management System or the VEX Competition Switch in the autonomous
+ * mode. Alternatively, this function may be called in initialize or opcontrol
+ * for non-competition testing purposes.
+ *
+ * If the robot is disabled or communications is lost, the autonomous task
+ * will be stopped. Re-enabling the robot will restart the task, not re-start it
+ * from where it left off.
+ */
+
+void autonomous()
+{
+    switch (auton_mode)
+    {
+    case auton_modes::home_row:
+        run_homerow();
+        break;
+    case auton_modes::skills:
+        //put code for a skills run
+        run_skills();
+        break;
+    }
 }

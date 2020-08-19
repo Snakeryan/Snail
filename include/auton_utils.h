@@ -6,14 +6,14 @@
 /**                                                                          **/
 /**       These methods allow for absolute tracking and positioning          **/
 /******************************************************************************/
-
 #include <pthread.h>
+#include <memory>
 
 class AutonUtils
 {
 
     // Task that updates the odometry functions:
-    pros::Mutex update_mutex;
+    pros::Mutex update_odometry_mutex;
 
     // all data members of the AutonUtils class:
     double encoder_wheel_radius, wL, wR, wM, globalX, globalY, alpha, prev_alpha, prev_left_encoder_distance, prev_right_encoder_distance, prev_middle_encoder_distance;
@@ -206,7 +206,7 @@ class AutonUtils
  * \return 
  *        the degree version of the radian value (method also constrains this version between 0-360)
 */
-    double rad_to_deg_wraped(double rad);
+    double convert_rad_to_deg_wraped(double rad);
 
     /**
  *        this is the formula used by this method: (rad * 180)/pi
@@ -215,7 +215,7 @@ class AutonUtils
  * \return 
  *        the degree version of the radian value 
 */
-    double rad_to_deg(double rad);
+    double convert_rad_to_deg(double rad);
 
     /**
  *        this is the formula used by this method: (deg * pi)/180
@@ -225,7 +225,7 @@ class AutonUtils
  * \return 
  *        the radian version of the degree value (does not wrap the radians between 0-2π)
 */
-    double deg_to_rad(double deg);
+    double convert_deg_to_rad(double deg);
 
     /**
  *        this is the formula used by this method: (left_encoder_distance - right_encoder_distance) / (wL + wR)
