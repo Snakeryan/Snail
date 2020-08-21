@@ -69,7 +69,7 @@ void manage_flywheel()
 			if (rtn.signature == 1) //blue
 			{
 				flywheel = -127;
-				pros::delay(200);
+				pros::delay(100);
 			}
 			else if (rtn.signature == 2) // red
 			{

@@ -5,7 +5,7 @@
 bool auto_sort_balls = false;
 
 //object of class autonUtils
-AutonUtils autonutils(1.375, 6.86024, 6.86024, 6.86024, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM);
+AutonUtils autonutils(1.375, 6.98, 6.98, 6.98, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM);
 
 //motors:
 pros::Motor intakeleft(11, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_COUNTS);
@@ -26,7 +26,7 @@ pros::Controller controller(pros::E_CONTROLLER_MASTER);
 //Sensors
 pros::ADIEncoder encoderL('A', 'B', false);
 pros::ADIEncoder encoderM('H', 'G', false);
-pros::ADIEncoder encoderR('F', 'E', true);
+pros::ADIEncoder encoderR('E', 'F', true);
 
 pros::Imu IMU(2);
 
