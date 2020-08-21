@@ -116,9 +116,11 @@ void run_skills()
 
     autonutils.set_current_global_position(0, 0, 0);
     set_intake(127);
-    autonutils.drive_to_point(0.96, 61.97, 270.00, false, true);
-    autonutils.drive_to_point(-21.51, 62.87, 270, false, false);
-    // auto_sort_balls = true;
+    // autonutils.drive_to_point(0.96, 61.97, 270.00, false, true);
+    autonutils.drive_to_point(-33.25, 35.00, 270.00, false, true);
+    stop_drive_motors();
+    // autonutils.drive_to_point(-21.51, 62.87, 270, false, false);
+    // auto_sort_balls = true;z
     // set_flywheel_and_indexer(127, 127)
 
     go_home();
