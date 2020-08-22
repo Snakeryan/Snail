@@ -1,11 +1,10 @@
 #include "main.h"
 
-
 //variable to know if you want to auto sort balls
 bool auto_sort_balls = false;
 
 //object of class autonUtils
-AutonUtils autonutils(1.375, 6.98, 6.98, 6.98, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM);
+AutonUtils autonutils(1.375, 6.9922569449, 6.9922569449, 6.9922569449, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM);
 
 //motors:
 pros::Motor intakeleft(11, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_COUNTS);
@@ -34,9 +33,8 @@ pros::Vision vision_sensor(9);
 pros::vision_signature_s_t BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
 pros::vision_signature_s_t RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
 
-
-pros::ADIDigitalIn limit_switch('C');
-pros::ADIAnalogIn light_sensor('D');
+pros::ADIDigitalIn lower_limit_switch('C');
+pros::ADIDigitalIn upper_limit_switch('D');
 
 //namespace to allow for cycling through different autonmous modes
 

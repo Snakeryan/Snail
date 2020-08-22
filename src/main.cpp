@@ -49,7 +49,6 @@ void on_center_button()
 
 void setup_sensors()
 {
-	light_sensor.calibrate();
 	calibrate_IMU();
 
 	vision_sensor.set_signature(1, &BLUE_BALL_SIGNATURE);
@@ -180,7 +179,6 @@ lower indexers down (R2)
 
 void run_macros()
 {
-	int ball_brightness_threshold = 2000;
 
 	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
 	{
@@ -195,9 +193,19 @@ void run_macros()
 		set_intake(0);
 	}
 
-	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2) && (!(light_sensor.get_value() < ball_brightness_threshold && controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))))
+	// If both buttons are pressed and limit switch is detected: stop indexer
+	// If only B is pressed: reverse indexer
+	// If only L2 is pressed: indexer
+	// Else: stop indexer
+
+	if ((upper_limit_switch.get_value() && controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) && controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
 	{
 		// indexer
+		indexer = 0;
+		pros::delay(50);
+	}
+	else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
+	{
 		indexer = 127;
 	}
 	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B))
@@ -237,16 +245,19 @@ void display_data()
 	{
 		pros::lcd::set_text(1, "(X, Y): (" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")");
 		pros::lcd::set_text(2, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
-		pros::lcd::set_text(3, "light: " + std::to_string(light_sensor.get_value()));
-		pros::lcd::set_text(4, std::to_string((int)indexer.get_temperature()) + "; " + std::to_string((int)flywheel.get_temperature()));
+		// pros::lcd::set_text(3, "light: " + std::to_string(light_sensor.get_value()));
+		pros::lcd::set_text(3, "lower limit: " + std::to_string(lower_balls_counted));
+		pros::lcd::set_text(4, "upper limit: " + std::to_string(upper_balls_counted));
+		// pros::lcd::set_text(4, std::to_string((int)indexer.get_temperature()) + "; " + std::to_string((int)flywheel.get_temperature()));
 		pros::lcd::set_text(5, std::to_string((int)FL.get_temperature()) + "; " + std::to_string((int)FR.get_temperature()) + "; " + std::to_string((int)BL.get_temperature()) + "; " + std::to_string((int)BR.get_temperature()));
+
 		pros::Task::delay(20);
 	}
 }
 
 void opcontrol()
 {
-	pros::Task balls_counted(display_data);
+	pros::Task display_data_task(display_data);
 	while (true)
 	{
 		drive();

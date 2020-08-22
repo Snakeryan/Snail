@@ -308,10 +308,13 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
     const double K_constant = 1;
     const double multiplier = 2;
 
-    //when to slow down using a threshold:
+    // to make sure the function never runs longer than two seconds:
+    double prev_time = pros::millis();
+
+    // when to slow down using a threshold:
     double slow_down_distance_threshold = 18;
 
-    //acceptable distance error:
+    // acceptable distance error:
     double acceptable_distance_error = 0.2;
 
     if (is_waypoint == true)
@@ -322,10 +325,10 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
     // setting the initial distance error:
     double initial_distance_error = sqrt(pow(tX - globalX, 2) + pow(tY - globalY, 2));
 
-    //changing the target angle to radians:
+    // changing the target angle to radians:
     double target_angle = convert_deg_to_rad(target_angle_in_degrees);
 
-    //declaring all of the error variables:
+    // declaring all of the error variables:
     double prev_angle_error, prev_distance_error, current_distance_error, angle_error, accumulated_error;
 
     do
@@ -349,11 +352,11 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
         R = constrain(R, -1.0, 1.0);
 
         //how much motor power to apply to translational (if S = 1 more translation and S = 0 is less translational):
-        double S; // OLD no threshold mode -> = MIN(abs(current_distance_error / initial_distance_error) * translational_KP, 1);
+        double S;
 
         if (abs(current_distance_error) < slow_down_distance_threshold)
         {
-            if (abs(current_distance_error) < 2)
+            if (abs(current_distance_error) < 3)
             {
                 accumulated_error += current_distance_error;
             }
@@ -397,7 +400,7 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
 
         //delay (can be very small):
         pros::delay(20);
-    } while (abs(current_distance_error) > acceptable_distance_error);
+    } while ((abs(current_distance_error) > acceptable_distance_error) && abs(prev_time - pros::millis()) < 2000);
 
     //if you want to have much less final error in the target angle:
     if (use_precise_turn)

@@ -20,31 +20,31 @@ void set_flywheel_and_indexer(int flywheel_power, int indexer_power)
 
 void run_auton_sensors()
 {
-    int prev_limit_value = 0;
-    int delta_light_sensor_value;
-    int prev_light_value = light_sensor.get_value();
+    int prev_lower_limit_value = 0;
+    int prev_upper_limit_value = 0;
+    double prev_time = pros::millis();
     while (true)
     {
 
-        if (limit_switch.get_value() == 1 && prev_limit_value == 0)
+        if (lower_limit_switch.get_value() == 1 && prev_lower_limit_value == 0)
         {
             lower_balls_counted++;
         }
 
-        prev_limit_value = limit_switch.get_value();
+        prev_lower_limit_value = lower_limit_switch.get_value();
 
-        int light_sensor_value = light_sensor.get_value();
-        delta_light_sensor_value = prev_light_value - light_sensor_value;
-        if (delta_light_sensor_value < -80)
+        if ((upper_limit_switch.get_value() == 1 && prev_upper_limit_value == 0) && abs(prev_time - pros::millis()) > 40)
         {
             upper_balls_counted++;
+            prev_time = pros::millis();
         }
 
-        prev_light_value = light_sensor_value;
+        prev_upper_limit_value = upper_limit_switch.get_value();
 
-        pros::lcd::set_text(3, "lower counter: " + std::to_string(lower_balls_counted));
-        pros::lcd::set_text(4, "upper counter: " + std::to_string(upper_balls_counted));
-        pros::lcd::set_text(6, "limit: " + std::to_string(lower_balls_counted));
+        pros::lcd::set_text(3, "left: " + std::to_string(autonutils.get_left_encoder_distance()));
+        pros::lcd::set_text(4, "right: " + std::to_string(autonutils.get_right_encoder_distance()));
+        pros::lcd::set_text(6, "lower limit: " + std::to_string(lower_balls_counted));
+        pros::lcd::set_text(7, "upper limit: " + std::to_string(upper_balls_counted));
 
         pros::Task::delay(10);
     }
@@ -56,7 +56,8 @@ void debug_autonomous()
     {
         pros::lcd::set_text(1, "x, y: (" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")");
         pros::lcd::set_text(2, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
-        pros::Task::delay(10);
+
+        pros::Task::delay(20);
     }
 }
 
@@ -81,7 +82,7 @@ void stop_drive_motors()
 
 void run_homerow()
 {
-    pros::Task autonomous_debugger(debug_autonomous);
+    // pros::Task autonomous_debugger(debug_autonomous);
 
     set_intake(127);
     autonutils.drive_to_point(0, -15, 45, false, true);
@@ -94,7 +95,7 @@ void run_homerow()
     set_flywheel_and_indexer(127, 127);
     while (lower_balls_counted < 3)
     {
-        pros::delay(10);
+        pros::delay(50);
     }
     set_intake(-31);
     pros::delay(500);
@@ -110,20 +111,83 @@ void run_homerow()
     go_home();
 }
 
+void wait_until_number_of_uppper_balls_counted(int number_of_balls_passed)
+{
+    while (upper_balls_counted < number_of_balls_passed)
+    {
+        pros::delay(20);
+    }
+}
+
+void wait_until_number_of_lower_balls_counted(int number_of_balls_passed)
+{
+    while (lower_balls_counted < number_of_balls_passed)
+    {
+        pros::delay(20);
+    }
+}
+
+// function score_in_goal(num_balls):
+// while (upperballscounted < target)):
+// - activate flywheel
+// - activate indexer and if upper_limit_switch is not pressed
+// - else: stop indexer; delay 20
+
+//
+
+//if upper_limit is pressed: indexer = 0; pros::delay(50);
+//else indexer = 127;
+
+void score_in_goal(int num_balls)
+{
+    while (upper_balls_counted <= num_balls)
+    {
+        flywheel = 127;
+        if (upper_limit_switch.get_value() == 0)
+        {
+            indexer = 127;
+        }
+        else
+        {
+            indexer = 0;
+            pros::delay(50);
+        }
+    }
+    pros::delay(50);
+    flywheel = -63;
+    pros::delay(100);
+    flywheel = 0;
+}
+
 void run_skills()
 {
-    pros::Task autonomous_debugger(debug_autonomous);
-
     autonutils.set_current_global_position(0, 0, 0);
     set_intake(127);
-    // autonutils.drive_to_point(0.96, 61.97, 270.00, false, true);
-    autonutils.drive_to_point(-33.25, 35.00, 270.00, false, true);
+    autonutils.drive_to_point(0, 13.72, 0, false, true);
+    autonutils.drive_to_point(20.23, 7.25, 135, false, false);
     stop_drive_motors();
-    // autonutils.drive_to_point(-21.51, 62.87, 270, false, false);
-    // auto_sort_balls = true;z
-    // set_flywheel_and_indexer(127, 127)
 
-    go_home();
+    // Score 2 red balls
+
+    score_in_goal(2);
+    // Store the 2 blue balls
+
+    flywheel = 0;
+    indexer = 0;
+    set_intake(0);
+    // wait_until_number_of_lower_balls_counted(2);
+    // set_intake(-63);
+    // pros::delay(50);
+    // set_intake(0);
+    // autonutils.drive_to_point(7.54, 29.62, 326, false, true);
+    // set_intake(127);
+    // // dispence the two blue balls
+    // flywheel = -127;
+    // autonutils.drive_to_point(-5.88, 50.26, 330, false, false);
+    // flywheel = 0;
+
+    // // Move to the next point
+    // stop_drive_motors();
 }
 
 /**
@@ -140,8 +204,10 @@ void run_skills()
 
 void autonomous()
 {
+    pros::Task autonomous_debugger(debug_autonomous);
     switch (auton_mode)
     {
+
     case auton_modes::home_row:
         run_homerow();
         break;
