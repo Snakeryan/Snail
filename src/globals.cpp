@@ -34,7 +34,7 @@ pros::vision_signature_s_t BLUE_BALL_SIGNATURE = pros::Vision::signature_from_ut
 pros::vision_signature_s_t RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
 
 pros::ADIDigitalIn lower_limit_switch('C');
-pros::ADIDigitalIn upper_limit_switch('D');
+pros::ADIAnalogIn light_sensor('D');
 
 //namespace to allow for cycling through different autonmous modes
 

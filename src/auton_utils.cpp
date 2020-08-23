@@ -299,7 +299,7 @@ double AutonUtils::compute_error(double target, double current_angle)
 
 // function to drive to a point with and without turning:
 
-void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint)
+void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint, double timeout)
 {
     //hyperparameters:
     const double rotational_KP = 2;
@@ -308,7 +308,6 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
     const double K_constant = 1;
     const double multiplier = 2;
 
-    // to make sure the function never runs longer than two seconds:
     double prev_time = pros::millis();
 
     // when to slow down using a threshold:
@@ -400,7 +399,7 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
 
         //delay (can be very small):
         pros::delay(20);
-    } while ((abs(current_distance_error) > acceptable_distance_error) && abs(prev_time - pros::millis()) < 2000);
+    } while ((abs(current_distance_error) > acceptable_distance_error) && abs(prev_time - pros::millis()) < timeout);
 
     //if you want to have much less final error in the target angle:
     if (use_precise_turn)

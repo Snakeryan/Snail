@@ -276,7 +276,7 @@ public:
  * \param is_waypoint
  *        if the point you are traveling to is a waypoint to get to another point, set this parameter to true (will only move translationally)
 */
-    void drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint);
+    void drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint, double timeout = 10000);
 
     /** 
  *        this method changes where the robot thinks it is with respect to its coordinates and heading (only use this if you are starting in a new position)

@@ -18,33 +18,50 @@ void set_flywheel_and_indexer(int flywheel_power, int indexer_power)
     indexer = indexer_power;
 }
 
+double light_sensor_calibrated_value = 0;
+
+double get_light_calibrated_value()
+{
+    return light_sensor.get_value() - light_sensor_calibrated_value;
+}
+
 void run_auton_sensors()
 {
-    int prev_lower_limit_value = 0;
-    int prev_upper_limit_value = 0;
-    double prev_time = pros::millis();
+    light_sensor_calibrated_value = light_sensor.calibrate();
+    // Lower Limit Switch
+    const double delay_time = 100;
+    double prev_lower_limit_value = lower_limit_switch.get_value();
+    double lower_prev_time = pros::millis();
+
+    // Upper Light Sensor
+    const double light_sensor_threshold = -500;
+    double prev_light_value = get_light_calibrated_value();
+    double upper_prev_time = pros::millis();
+
     while (true)
     {
 
-        if (lower_limit_switch.get_value() == 1 && prev_lower_limit_value == 0)
+        if ((lower_limit_switch.get_value() == 1 && prev_lower_limit_value == 0) && abs(lower_prev_time - pros::millis()) > delay_time)
         {
             lower_balls_counted++;
+            lower_prev_time = pros::millis();
         }
 
         prev_lower_limit_value = lower_limit_switch.get_value();
 
-        if ((upper_limit_switch.get_value() == 1 && prev_upper_limit_value == 0) && abs(prev_time - pros::millis()) > 40)
+        if ((get_light_calibrated_value() < light_sensor_threshold && prev_light_value > light_sensor_threshold) && abs(upper_prev_time - pros::millis()) > delay_time)
         {
             upper_balls_counted++;
-            prev_time = pros::millis();
+            upper_prev_time = pros::millis();
         }
 
-        prev_upper_limit_value = upper_limit_switch.get_value();
+        prev_light_value = get_light_calibrated_value();
 
-        pros::lcd::set_text(3, "left: " + std::to_string(autonutils.get_left_encoder_distance()));
-        pros::lcd::set_text(4, "right: " + std::to_string(autonutils.get_right_encoder_distance()));
-        pros::lcd::set_text(6, "lower limit: " + std::to_string(lower_balls_counted));
-        pros::lcd::set_text(7, "upper limit: " + std::to_string(upper_balls_counted));
+        // pros::lcd::set_text(3, "left: " + std::to_string(autonutils.get_left_encoder_distance()));
+        // pros::lcd::set_text(4, "right: " + std::to_string(autonutils.get_right_encoder_distance()));
+
+        pros::lcd::set_text(6, "upper balls counted: " + std::to_string(upper_balls_counted));
+        pros::lcd::set_text(5, "light: " + std::to_string((get_light_calibrated_value())));
 
         pros::Task::delay(10);
     }
@@ -140,41 +157,35 @@ void wait_until_number_of_lower_balls_counted(int number_of_balls_passed)
 
 void score_in_goal(int num_balls)
 {
-    while (upper_balls_counted <= num_balls)
+    flywheel = 127;
+    indexer = 127;
+    while (upper_balls_counted < num_balls)
     {
-        flywheel = 127;
-        if (upper_limit_switch.get_value() == 0)
-        {
-            indexer = 127;
-        }
-        else
-        {
-            indexer = 0;
-            pros::delay(50);
-        }
+        pros::delay(10);
     }
-    pros::delay(50);
-    flywheel = -63;
-    pros::delay(100);
+    pros::delay(250);
     flywheel = 0;
+    indexer = 0;
 }
 
 void run_skills()
 {
-    autonutils.set_current_global_position(0, 0, 0);
+    // autonutils.set_current_global_position(0, 0, 0);
     set_intake(127);
-    autonutils.drive_to_point(0, 13.72, 0, false, true);
-    autonutils.drive_to_point(20.23, 7.25, 135, false, false);
-    stop_drive_motors();
+    // autonutils.drive_to_point(0, 13.72, 0, false, true);
+    // stop_drive_motors();
+    // autonutils.drive_to_point(20.23, 7.25, 135, false, false);
+    // stop_drive_motors();
 
-    // Score 2 red balls
+    // Score 2 red balls:
 
-    score_in_goal(2);
-    // Store the 2 blue balls
-
-    flywheel = 0;
-    indexer = 0;
+    score_in_goal(1);
     set_intake(0);
+    // Store the 2 blue balls:
+
+    // flywheel = 0;
+    // indexer = 0;
+    // set_intake(0);
     // wait_until_number_of_lower_balls_counted(2);
     // set_intake(-63);
     // pros::delay(50);
