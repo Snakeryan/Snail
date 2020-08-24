@@ -6,6 +6,9 @@
 //variable to know if you want to auto sort balls
 extern bool auto_sort_balls;
 
+//variable to know if you want to dispense (this is for autonomous):
+extern bool dispense_triggered;
+
 //namespace to allow for cycling through different autonmous modes
 namespace auton_modes
 {

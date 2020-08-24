@@ -195,7 +195,7 @@ void AutonUtils::turn_to_point(double destX, double destY)
         angle += TAU;
     }
     pros::lcd::set_text(0, "the angle to turn is: " + std::to_string(convert_rad_to_deg_wraped(angle)));
-    point_turn_PID(angle);
+    point_turn_PID(angle, 40, .7, -43);
 }
 
 /*
@@ -299,7 +299,7 @@ double AutonUtils::compute_error(double target, double current_angle)
 
 // function to drive to a point with and without turning:
 
-void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint, double timeout)
+void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint, const std::function<void()> &trigger, int trigger_distance, double timeout)
 {
     //hyperparameters:
     const double rotational_KP = 2;
@@ -329,6 +329,9 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
 
     // declaring all of the error variables:
     double prev_angle_error, prev_distance_error, current_distance_error, angle_error, accumulated_error;
+
+    //flag to see if the trigger function has activated
+    bool trigger_activated = false;
 
     do
     {
@@ -388,14 +391,21 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
         compute_BR_motor_speed(P2, s, K_constant, R, multiplier, motors_on_off);
 
         //debugging:
-        pros::lcd::set_text(3, "distance error: " + std::to_string(current_distance_error));
-        pros::lcd::set_text(4, "R: " + std::to_string(R));
-        pros::lcd::set_text(5, "the error angle: " + std::to_string(convert_rad_to_deg(angle_error)));
-        pros::lcd::set_text(6, "alpha: " + std::to_string(convert_rad_to_deg(alpha)));
-        pros::lcd::set_text(7, "coordinates: (" + std::to_string(globalX) + ", " + std::to_string(globalY) + ")");
+        // pros::lcd::set_text(3, "distance error: " + std::to_string(current_distance_error));
+        // pros::lcd::set_text(4, "R: " + std::to_string(R));
+        // pros::lcd::set_text(5, "the error angle: " + std::to_string(convert_rad_to_deg(angle_error)));
+        // pros::lcd::set_text(6, "alpha: " + std::to_string(convert_rad_to_deg(alpha)));
+        // pros::lcd::set_text(7, "coordinates: (" + std::to_string(globalX) + ", " + std::to_string(globalY) + ")");
 
-        //setting the previous values of the translational and rotational errors
+        //setting the previous values of the translational and rotational errors:
         prev_angle_error = angle_error;
+
+        //conditional statement if you want to dispence balls at a certain distance away from a coordinate:
+        if (trigger != 0 && current_distance_error < trigger_distance && !trigger_activated)
+        {
+            trigger();
+            trigger_activated = true;
+        }
 
         //delay (can be very small):
         pros::delay(20);
@@ -452,7 +462,7 @@ void AutonUtils::point_turn_PID(double target, const double Kp, const double Ki,
 
         pros::delay(20);
 
-    } while (((abs(previous_error - error) > 0.000000000001) || abs(error) > 0.01));
+    } while (((abs(derivative) > 0.0001) || abs(error) > 0.01));
 
     pros::lcd::set_text(0, "pid escaped");
 }

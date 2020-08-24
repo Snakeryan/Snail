@@ -1,9 +1,12 @@
 #include "main.h"
 
-//variable to know if you want to auto sort balls
+//variable to know if you want to auto sort balls:
 bool auto_sort_balls = false;
 
-//object of class autonUtils
+//variable to know if you want to dispense (this is for autonomous):
+bool dispense_triggered = false;
+
+//object of class AutonUtils:
 AutonUtils autonutils(1.375, 6.9922569449, 6.9922569449, 6.9922569449, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM);
 
 //motors:

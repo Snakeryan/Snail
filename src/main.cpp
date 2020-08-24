@@ -56,7 +56,7 @@ void setup_sensors()
 	pros::Task auton_sensors_task(run_auton_sensors);
 }
 
-void manage_flywheel()
+void manage_indexer_and_flywheel()
 {
 	pros::vision_object_s_t rtn;
 	while (true)
@@ -78,7 +78,17 @@ void manage_flywheel()
 				flywheel = 127;
 			}
 		}
-		pros::lcd::set_text(7, "signature: " + std::to_string(rtn.signature));
+		// pros::lcd::set_text(7, "signature: " + std::to_string(rtn.signature));
+
+		if (dispense_triggered)
+		{
+			indexer = -127;
+			wait_until_number_of_lower_balls_counted(lower_balls_counted + 1);
+			indexer = 127;
+			flywheel = -127;
+			dispense_triggered = false;
+		}
+
 		pros::Task::delay(20);
 	}
 }
@@ -94,7 +104,7 @@ void initialize()
 	light_sensor.calibrate();
 	setup_sensors();
 	autonutils.make_update_thread();
-	pros::Task flywheel_manager_task(manage_flywheel);
+	pros::Task flywheel_manager_task(manage_indexer_and_flywheel);
 	pros::lcd::initialize();
 	pros::lcd::register_btn1_cb(on_center_button);
 	display_auton_mode();
@@ -180,7 +190,7 @@ lower indexers down (R2)
 
 void run_macros()
 {
-
+	const int light_sensor_threshold = -500;
 	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
 	{
 		set_intake(127);
@@ -199,13 +209,13 @@ void run_macros()
 	// If only L2 is pressed: indexer
 	// Else: stop indexer
 
-	// if ((upper_limit_switch.get_value() && controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) && controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
+	// if ((get_light_calibrated_value() < light_sensor_threshold && controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) && controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
 	// {
 	// 	// indexer
 	// 	indexer = 0;
 	// 	pros::delay(50);
 	// }
-	if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
+	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
 	{
 		indexer = 127;
 	}
@@ -246,8 +256,8 @@ void display_data()
 	{
 		pros::lcd::set_text(1, "(X, Y): (" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")");
 		pros::lcd::set_text(2, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
-		// pros::lcd::set_text(4, std::to_string((int)indexer.get_temperature()) + "; " + std::to_string((int)flywheel.get_temperature()));
-		pros::lcd::set_text(5, std::to_string((int)FL.get_temperature()) + "; " + std::to_string((int)FR.get_temperature()) + "; " + std::to_string((int)BL.get_temperature()) + "; " + std::to_string((int)BR.get_temperature()));
+		pros::lcd::set_text(4, std::to_string((int)indexer.get_temperature()) + "; " + std::to_string((int)flywheel.get_temperature()));
+		pros::lcd::set_text(3, std::to_string((int)FL.get_temperature()) + "; " + std::to_string((int)FR.get_temperature()) + "; " + std::to_string((int)BL.get_temperature()) + "; " + std::to_string((int)BR.get_temperature()));
 
 		pros::Task::delay(20);
 	}

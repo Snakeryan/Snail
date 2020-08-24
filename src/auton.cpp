@@ -48,8 +48,8 @@ void run_auton_sensors()
         }
 
         prev_lower_limit_value = lower_limit_switch.get_value();
-
-        if ((get_light_calibrated_value() < light_sensor_threshold && prev_light_value > light_sensor_threshold) && abs(upper_prev_time - pros::millis()) > delay_time)
+        // -600 -> 0 crossing detection system, prev = -600, current = 0, threnshold = -500
+        if ((get_light_calibrated_value() > light_sensor_threshold && prev_light_value < light_sensor_threshold) && abs(upper_prev_time - pros::millis()) > delay_time)
         {
             upper_balls_counted++;
             upper_prev_time = pros::millis();
@@ -62,6 +62,7 @@ void run_auton_sensors()
 
         pros::lcd::set_text(6, "upper balls counted: " + std::to_string(upper_balls_counted));
         pros::lcd::set_text(5, "light: " + std::to_string((get_light_calibrated_value())));
+        pros::lcd::set_text(7, "lower balls counted: " + std::to_string((lower_balls_counted)));
 
         pros::Task::delay(10);
     }
@@ -158,6 +159,7 @@ void wait_until_number_of_lower_balls_counted(int number_of_balls_passed)
 void score_in_goal(int num_balls)
 {
     flywheel = 127;
+    pros::delay(100);
     indexer = 127;
     while (upper_balls_counted < num_balls)
     {
@@ -168,37 +170,92 @@ void score_in_goal(int num_balls)
     indexer = 0;
 }
 
+void score_in_goal_with_light(int num_balls)
+{
+    flywheel = 127;
+    indexer = 127;
+    while (upper_balls_counted < num_balls)
+    {
+        if (get_light_calibrated_value() < -500)
+        {
+            indexer = -100;
+            pros::delay(50);
+        }
+        else
+        {
+            indexer = 127;
+        }
+        pros::delay(10);
+    }
+    pros::delay(100);
+    flywheel = 0;
+    indexer = 0;
+}
+
+void test_mode()
+{
+    set_intake(127);
+    score_in_goal_with_light(2);
+    set_intake(0);
+}
+
 void run_skills()
 {
-    // autonutils.set_current_global_position(0, 0, 0);
+    autonutils.set_current_global_position(0, 0, 0);
     set_intake(127);
-    // autonutils.drive_to_point(0, 13.72, 0, false, true);
-    // stop_drive_motors();
-    // autonutils.drive_to_point(20.23, 7.25, 135, false, false);
-    // stop_drive_motors();
-
+    autonutils.drive_to_point(0, 13.72, 0, false, true);
+    autonutils.drive_to_point(20.10, 6.70, 135.5, false, false, NULL, 0, 3000);
+    stop_drive_motors();
     // Score 2 red balls:
+    score_in_goal_with_light(2);
 
-    score_in_goal(1);
-    set_intake(0);
     // Store the 2 blue balls:
+    indexer = 127;
+    wait_until_number_of_lower_balls_counted(3);
+    set_intake(-63);
+    pros::delay(50);
+    set_intake(0);
 
-    // flywheel = 0;
-    // indexer = 0;
-    // set_intake(0);
-    // wait_until_number_of_lower_balls_counted(2);
-    // set_intake(-63);
-    // pros::delay(50);
-    // set_intake(0);
-    // autonutils.drive_to_point(7.54, 29.62, 326, false, true);
-    // set_intake(127);
-    // // dispence the two blue balls
-    // flywheel = -127;
-    // autonutils.drive_to_point(-5.88, 50.26, 330, false, false);
-    // flywheel = 0;
+    //WAYPOINT to tower two:
+    autonutils.drive_to_point(7.54, 29.62, 200, false, true, []() { dispense_triggered = true; }, 15);
 
-    // // Move to the next point
-    // stop_drive_motors();
+    // dispense the two blue balls and collect a red ball:
+    set_intake(127);
+    autonutils.drive_to_point(-4.74, 48.17, 333, false, false, []() { indexer = 127; flywheel = 0; }, 3);
+    autonutils.drive_to_point(-11.45, 63.82, 336, false, false);
+
+    //drive and turn to tower two:
+    autonutils.turn_to_point(16.26, 63.05);
+    indexer = 127;
+    autonutils.drive_to_point(16.26, 63.05, 92, false, false);
+    stop_drive_motors();
+
+    //reset the number of balls counted:
+    lower_balls_counted = 0;
+    upper_balls_counted = 0;
+
+    //score in tower two:
+    score_in_goal_with_light(1);
+    set_intake(-63);
+    pros::delay(50);
+    set_intake(0);
+
+    //drive to tower three:
+    autonutils.drive_to_point(21.29, 117.15, 46.6, false, false);
+    stop_drive_motors();
+
+    //reset the number of balls counted:
+    lower_balls_counted = 0;
+    upper_balls_counted = 0;
+
+    // score in tower three:
+    score_in_goal_with_light(1);
+    indexer = 127;
+    set_intake(127);
+    wait_until_number_of_lower_balls_counted(2);
+    set_intake(-63);
+    pros::delay(50);
+    set_intake(0);
 }
 
 /**
