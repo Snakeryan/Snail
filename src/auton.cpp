@@ -199,10 +199,20 @@ void test_mode()
     set_intake(0);
 }
 
+void deploy_intakes()
+{
+    set_intake(127);
+    pros::delay(200);
+    set_intake(0);
+    pros::delay(200);
+    set_intake(127);
+}
+
 void run_skills()
 {
     autonutils.set_current_global_position(0, 0, 0);
-    set_intake(127);
+    // deploy_intakes();
+    set_intake(127); 
     autonutils.drive_to_point(0, 13.72, 0, false, true);
     autonutils.drive_to_point(20.10, 6.70, 135.5, false, false, NULL, 0, 3000);
     stop_drive_motors();
@@ -221,13 +231,16 @@ void run_skills()
 
     // dispense the two blue balls and collect a red ball:
     set_intake(127);
-    autonutils.drive_to_point(-4.74, 48.17, 333, false, false, []() { indexer = 127; flywheel = 0; }, 3);
-    autonutils.drive_to_point(-11.45, 63.82, 336, false, false);
+    // autonutils.drive_to_point(-1.88, 45.36, 329.9, false, true);
+    
+    autonutils.drive_to_point(-2.15, 49.93, 329.7, false, false, []() { indexer = 127; flywheel = 0; }, 3);
+
+    autonutils.drive_to_point(-11.01, 62.10, 0, false, false);
 
     //drive and turn to tower two:
-    autonutils.turn_to_point(16.26, 63.05);
+    autonutils.turn_to_point(16.81, 60.97);
     indexer = 127;
-    autonutils.drive_to_point(16.26, 63.05, 92, false, false);
+    autonutils.drive_to_point(16.81, 60.97, 91.34, false, false, [](){flywheel = -127;}, 20, 2000);
     stop_drive_motors();
 
     //reset the number of balls counted:
@@ -235,13 +248,17 @@ void run_skills()
     upper_balls_counted = 0;
 
     //score in tower two:
+
     score_in_goal_with_light(1);
     set_intake(-63);
     pros::delay(50);
     set_intake(0);
 
+    //WAYPOINT to tower three:
+    autonutils.drive_to_point(-1.40, 110.37, 52, false, true);
+
     //drive to tower three:
-    autonutils.drive_to_point(21.29, 117.15, 46.6, false, false);
+    autonutils.drive_to_point(19.63, 119.14, 46.50, false, false, NULL, 0, 2000);
     stop_drive_motors();
 
     //reset the number of balls counted:
@@ -253,9 +270,31 @@ void run_skills()
     indexer = 127;
     set_intake(127);
     wait_until_number_of_lower_balls_counted(2);
-    set_intake(-63);
-    pros::delay(50);
     set_intake(0);
+
+    //dispense the blue balls from tower two and three:
+    autonutils.drive_to_point(-2.96, 92.82, 46.11, false, true, []() { flywheel = -127; indexer = -127; set_intake(-127); }, 32);
+    autonutils.drive_to_point(-12.14, 97.69, 243.98, false, false, NULL, 0, 2000);
+    flywheel = 0;
+    indexer = 127;
+    set_intake(127);
+
+    //collect the next ball and drive to tower four:
+    autonutils.drive_to_point(-23.64, 93.56, 242.01, false, false);
+    autonutils.drive_to_point(-36.49, 113.07, 356.42, false, false, NULL, 0, 2000);
+    stop_drive_motors();
+
+    //reset the number of balls counted:
+    lower_balls_counted = 0;
+    upper_balls_counted = 0;
+
+    //score in tower four
+    score_in_goal_with_light(1);
+    indexer = 127;
+    // set_intake(127);
+    // wait_until_number_of_lower_balls_counted(1);
+    set_intake(0);
+    
 }
 
 /**
