@@ -1,0 +1,121 @@
+#include "PID_controller.h"
+#include "globals.h"
+
+template <class T>
+const T &constrain(const T &x, const T &a, const T &b)
+{
+    if (x < a)
+    {
+        return a;
+    }
+    else if (b < x)
+    {
+        return b;
+    }
+    else
+        return x;
+}
+
+PID_controller::PID_controller(double kP, double kI, double kD, double max_output, double min_output)
+{
+    this->kP = kP;
+    this->kD = kD;
+    this->kI = kI;
+    this->max_output = max_output;
+    this->min_output = min_output;
+}
+
+double PID_controller::compute(double new_error, bool use_dt)
+{
+
+    //assigning the new_error to the data member error:
+    error = new_error;
+
+    //assigning the integral value:
+
+    //will set integral back to zero if there is a cross over from positive to negative and use_crossover is true:
+    if (((prev_error < 0 && error > 0) || (error < 0 && prev_error > 0)) && use_crossover)
+    {
+        integral = 0;
+    }
+
+    //will set integral only if the error is below a certain amount if use_bounded_error is true:
+    if (abs(error) < integral_error_limit && use_bounded_error)
+    {
+        integral += error;
+    }
+    else if (use_bounded_error)
+    {
+        integral = 0;
+    }
+    else
+    {
+        integral += error;
+    }
+
+    //making a time variable:
+    double time = pros::millis(); //have to change pros::millis() to something more versatile
+
+    //assigning the derivative value
+    derivative = prev_error - error;
+
+    //if use_dt time is true, time will be incorporated into derivative and integral
+    if (use_dt)
+    {
+        double dt = time - prev_time;
+        derivative /= dt;
+        integral *= dt;
+    }
+
+    //assigning the prev variables
+    prev_time = time;
+    prev_error = new_error;
+
+    //returning the PID value
+    double PID_value = error * kP + integral * kI + derivative * kD;
+
+    PID_value = constrain(PID_value, min_output, max_output);
+
+    return PID_value;
+}
+
+void PID_controller::use_integrater_error_bound(double integral_error_limit)
+{
+    this->integral_error_limit = integral_error_limit;
+    use_bounded_error = true;
+}
+
+void PID_controller::use_crossover_zero()
+{
+    use_crossover = true;
+}
+
+void PID_controller::reset_integral()
+{
+    integral = 0;
+}
+
+double PID_controller::get_prev_time_since_PID_initialized()
+{
+    return prev_time;
+}
+
+double PID_controller::get_time_since_PID_initialized()
+{
+    return time;
+}
+
+double PID_controller::get_error()
+{
+    return error;
+}
+
+double PID_controller::get_integral()
+{
+    return integral;
+}
+
+double PID_controller::get_derivative()
+{
+    return derivative;
+}

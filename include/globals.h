@@ -52,5 +52,6 @@ extern pros::ADIAnalogIn light_sensor;
 extern pros::Vision vision_sensor;
 extern pros::vision_signature_s_t BLUE_BALL_SIGNATURE;
 extern pros::vision_signature_s_t RED_BALL_SIGNATURE;
+extern pros::vision_signature_s_t tower_backboard_signature;
 
 #endif

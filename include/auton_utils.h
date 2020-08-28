@@ -136,7 +136,7 @@ class AutonUtils
  * \param use_motor
  *       a debugging parameter that turns the motors off if it is zero and on if it is one (one is the default parameter)
 */
-    void compute_FL_motor_speed(double P2, double s, double S, double R, double multiplier, double use_motor = 1);
+    void compute_FL_motor_speed(double P2, double s, double S, double R, double multiplier);
 
     /** 
  *        this is the formula used by this method: ((P1 / s) * (1 - abs(R)) - R * K_constant) * -1
@@ -153,7 +153,7 @@ class AutonUtils
  * \param use_motor
  *       a debugging parameter that turns the motors off if it is zero and on if it is one (one is the default parameter)
 */
-    void compute_FR_motor_speed(double P1, double s, double S, double R, double multiplier, double use_motor = 1);
+    void compute_FR_motor_speed(double P1, double s, double S, double R, double multiplier);
 
     /** 
  *        this is the formula used by this method: ((P1 / s) * (1 - abs(R)) + R * K_constant)
@@ -170,7 +170,7 @@ class AutonUtils
  * \param use_motor
  *       a debugging parameter that turns the motors off if it is zero and on if it is one (one is the default parameter)
 */
-    void compute_BL_motor_speed(double P1, double s, double S, double R, double multiplier, double use_motor = 1);
+    void compute_BL_motor_speed(double P1, double s, double S, double R, double multiplier);
 
     /** 
  *        this is the formula used by this method: ((P2 / s) * (1 - abs(R)) - R * K_constant) * -1
@@ -187,7 +187,7 @@ class AutonUtils
  * \param use_motor
  *       a debugging parameter that turns the motors off if it is zero and on if it is one (one is the default parameter)
 */
-    void compute_BR_motor_speed(double P2, double s, double S, double R, double multiplier, double use_motor = 1);
+    void compute_BR_motor_speed(double P2, double s, double S, double R, double multiplier);
 
     /** 
  *        main funcition for odometry, as it is where all of the variables are updated and absolute coordinates are calculated
@@ -249,7 +249,7 @@ class AutonUtils
  * \param turn
  *        the speed at which you want the robot to turn (12 is the maximum speed)
 */
-    double compute_error(double target, double current_angle);
+    double compute_angle_error(double target, double current_angle);
 
     /**
  * \return 
@@ -270,13 +270,19 @@ public:
  * \param tY
  *        Y coordinate that you want the robot to move to
  * \param target_angle_in_degrees
- *        the angle you want your robot to turn to while moving
+ *        the angle you want the robot to turn to while moving
  * \param use_precise_turn
  *        adds a PID loop to the end of the drive_to_point function that allows for precise turns 
  * \param is_waypoint
  *        if the point you are traveling to is a waypoint to get to another point, set this parameter to true (will only move translationally)
+ * \param trigger
+ *        allows you to pass in a function that will happen at a certain distance away from the target point (can pass in a lambda and pass in NULL if you do not want to run a function)
+ * \param trigger_distance
+ *        the distance away from the target coordinate that you want to activate the function you passed in (put 0 if you do not want to pass in anything)
+ * \param timeout
+ *       the maximum amount of time the robot can spend driving to a point (has default of 10000 milliseconds`)
 */
-    void drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint, const std::function<void()>& dispence = 0, int dist_to_dispence_balls = 3, double timeout = 10000);
+    void drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint, const std::function<void()> &trigger = 0, int trigger_distance = 3, double timeout = 10000);
 
     /** 
  *        this method changes where the robot thinks it is with respect to its coordinates and heading (only use this if you are starting in a new position)
@@ -360,7 +366,11 @@ public:
  *        if you want to not use the angle calculated by odometry and use the IMU, then set this parameter to true
  * 
 */
-    void point_turn_PID(double target, const double Kp = 37.5, const double Ki = .7, const double Kd = -0, bool use_IMU = false);
+    void set_translational_backboard_speed(double translational_speed);
+
+    void drive_to_tower_backboard(double IMU_angle_to_turn);
+
+    void point_turn_PID(double target, bool use_IMU = false, const double Kp = 30, const double Ki = 1.1, const double Kd = -65);
 
     /** 
  *        this method uses a PID loop to turn to a point on the coordinate system
@@ -374,6 +384,8 @@ public:
     /** 
  *        a destructor to make sure that the update task never outlives the object
 */
+    void run_Xdrive(double T, double S, double R);
+
     ~AutonUtils();
 };
 

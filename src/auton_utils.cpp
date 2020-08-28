@@ -1,7 +1,7 @@
 #include <iostream>
 #include "main.h"
 #include "auton.h"
-#include "globals.h"
+#include "globals.h" #include "PID_controller.h"
 
 //motion profiling functions:
 /*
@@ -195,7 +195,7 @@ void AutonUtils::turn_to_point(double destX, double destY)
         angle += TAU;
     }
     pros::lcd::set_text(0, "the angle to turn is: " + std::to_string(convert_rad_to_deg_wraped(angle)));
-    point_turn_PID(angle, 40, .7, -43);
+    point_turn_PID(angle, 30, .7, -60);
 }
 
 /*
@@ -244,28 +244,28 @@ double AutonUtils::compute_s(double P1, double P2, double S)
     BR = P2/s(1 - abs(R)) - R * S
 */
 
-void AutonUtils::compute_FL_motor_speed(double P2, double s, double K_constant, double R, double multiplier, double use_motor)
+void AutonUtils::compute_FL_motor_speed(double P2, double s, double K_constant, double R, double multiplier)
 {
     double FL_speed = (P2 / s) * (1 - abs(R)) + R * K_constant;
-    FL->move_voltage(FL_speed * 12700 * use_motor * multiplier);
+    FL->move_voltage(FL_speed * 12700 * multiplier);
 }
 
-void AutonUtils::compute_FR_motor_speed(double P1, double s, double K_constant, double R, double multiplier, double use_motor)
+void AutonUtils::compute_FR_motor_speed(double P1, double s, double K_constant, double R, double multiplier)
 {
     double FR_speed = ((P1 / s) * (1 - abs(R)) - R * K_constant) * -1;
-    FR->move_voltage(FR_speed * 12700 * use_motor * multiplier);
+    FR->move_voltage(FR_speed * 12700 * multiplier);
 }
 
-void AutonUtils::compute_BL_motor_speed(double P1, double s, double K_constant, double R, double multiplier, double use_motor)
+void AutonUtils::compute_BL_motor_speed(double P1, double s, double K_constant, double R, double multiplier)
 {
     double BL_speed = ((P1 / s) * (1 - abs(R)) + R * K_constant);
-    BL->move_voltage(BL_speed * 12700 * use_motor * multiplier);
+    BL->move_voltage(BL_speed * 12700 * multiplier);
 }
 
-void AutonUtils::compute_BR_motor_speed(double P2, double s, double K_constant, double R, double multiplier, double use_motor)
+void AutonUtils::compute_BR_motor_speed(double P2, double s, double K_constant, double R, double multiplier)
 {
     double BR_speed = ((P2 / s) * (1 - abs(R)) - R * K_constant) * -1;
-    BR->move_voltage(BR_speed * 127000 * use_motor * multiplier);
+    BR->move_voltage(BR_speed * 127000 * multiplier);
 }
 
 void AutonUtils::set_turn(int turn)
@@ -276,7 +276,7 @@ void AutonUtils::set_turn(int turn)
     BL->move_voltage(turn * 1000);
 }
 
-double AutonUtils::compute_error(double target, double current_angle)
+double AutonUtils::compute_angle_error(double target, double current_angle)
 {
     double error = current_angle - target;
     if (error < -pi)
@@ -342,8 +342,8 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
         current_distance_error = sqrt(pow(error_in_X, 2) + pow(error_in_Y, 2));
 
         // rotational error (have arc_length_error so that we can convert angle error into inch):
-        angle_error = compute_error(target_angle, get_constrained_alpha());
-        double arc_length_error = angle_error * wM;
+        angle_error = compute_angle_error(target_angle, get_constrained_alpha());
+        double arc_length_error = angle_error * wR;
         if (abs(current_distance_error) < 2)
         {
             arc_length_error = 0;
@@ -379,16 +379,7 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
         //Target coordinate plane offset:
         double T = atan2(error_in_Y, error_in_X) + alpha;
 
-        //intermediates:
-        double P1 = compute_P1(T);
-        double P2 = compute_P2(T);
-        double s = compute_s(P1, P2, S);
-
-        //how much power to apply to each motor:
-        compute_FL_motor_speed(P2, s, K_constant, R, multiplier, motors_on_off);
-        compute_FR_motor_speed(P1, s, K_constant, R, multiplier, motors_on_off);
-        compute_BL_motor_speed(P1, s, K_constant, R, multiplier, motors_on_off);
-        compute_BR_motor_speed(P2, s, K_constant, R, multiplier, motors_on_off);
+        run_Xdrive(T, S, R);
 
         //debugging:
         // pros::lcd::set_text(3, "distance error: " + std::to_string(current_distance_error));
@@ -421,49 +412,192 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
     pros::lcd::set_text(0, "drive_to_point exited");
 }
 
-void AutonUtils::point_turn_PID(double target, const double Kp, const double Ki, const double Kd, bool use_IMU)
+void AutonUtils::drive_to_tower_backboard(double target_angle)
 {
-    double error, derivative, integral, accumulated_error, change_time, previous_time, previous_error;
+    //turn to a specified angle
+    // autonutils.point_turn_PID(target_angle, true);
+
+    //move laterally to center of the backboard:
+    pros::vision_object_s_t backboard, prev_backboard;
+    PID_controller pid_controller(0.00001, 0, 0, 0, 1);
+    do
+    {
+        backboard = vision_sensor.get_by_size(0);
+        pros::lcd::set_text(7, "signature: " + std::to_string(backboard.signature));
+
+        // if (backboard.signature == 3)
+        // {
+        //     prev_backboard = backboard;
+        // }
+        // else
+        // {
+        //     pros::lcd::set_text(7, "did not detect");
+        //     backboard = prev_backboard;
+        // }
+        if (backboard.signature != 3)
+        {
+            pros::delay(20);
+            FL->move_voltage(0 * 1000);
+            FR->move_voltage(0 * 1000);
+            BR->move_voltage(0 * 1000);
+            BL->move_voltage(0 * 1000);
+            continue;
+        }
+
+        pros::lcd::set_text(5, "area: " + std::to_string(backboard.width * backboard.height));
+        pros::lcd::set_text(6, "vision coordinates: ( " + std::to_string(backboard.x_middle_coord) + ", " + std::to_string(backboard.y_middle_coord) + ")");
+
+        double distance_error = backboard.x_middle_coord - 255;
+
+        double angle_error = 0; // compute_angle_error(target_angle, convert_deg_to_rad(IMU.get_heading()));
+
+        double T = atan2(0, distance_error);
+        double S = pid_controller.compute(abs(distance_error));
+
+        double arc_length_error = angle_error * wR;
+
+        double R = MIN((arc_length_error * 1) / (15 + abs(distance_error)), 1);
+        R = constrain(R, -1.0, 1.0);
+
+        run_Xdrive(T, S, R);
+
+        pros::delay(20);
+    } while (true); //abs(pid_controller.get_error()) > 0.2);
+}
+
+void AutonUtils::run_Xdrive(double T, double S, double R)
+{
+    double P1 = compute_P1(T);
+    double P2 = compute_P2(T);
+    double s = compute_s(P1, P2, S);
+
+    //how much power to apply to each motor:
+    compute_FL_motor_speed(P2, s, 1, R, 2);
+    compute_FR_motor_speed(P1, s, 1, R, 2);
+    compute_BL_motor_speed(P1, s, 1, R, 2);
+    compute_BR_motor_speed(P2, s, 1, R, 2);
+}
+
+void AutonUtils::set_translational_backboard_speed(double translational_speed)
+{
+    if (translational_speed < 0)
+    {
+        FL->move_voltage(-translational_speed * 1000);
+        FR->move_voltage(-translational_speed * 1000);
+        BR->move_voltage(translational_speed * 1000);
+        BL->move_voltage(translational_speed * 1000);
+    }
+    if (translational_speed > 0)
+    {
+        FL->move_voltage(translational_speed * 1000);
+        FR->move_voltage(translational_speed * 1000);
+        BR->move_voltage(-translational_speed * 1000);
+        BL->move_voltage(-translational_speed * 1000);
+    }
+}
+
+// void AutonUtils::drive_to_tower_backboard(double IMU_angle_to_turn)
+// {
+//     double error_in_coordinates, difference_in_coordinates, accumulated_error, previous_error_in_coordinates = 0;
+//     pros::vision_object_s_t backboard;
+//     do
+//     {
+//         backboard = vision_sensor.get_by_size(0);
+//         double X = backboard.x_middle_coord;
+//         autonutils.point_turn_PID(IMU_angle_to_turn, 40, .7, -43, true);
+
+//         error_in_coordinates = 255 - X;
+//         difference_in_coordinates = previous_error_in_coordinates - error_in_coordinates;
+//         if (abs(error_in_coordinates) < 20)
+//         {
+//             accumulated_error += error_in_coordinates;
+//         }
+//         else
+//         {
+//             accumulated_error = 0;
+//         }
+
+//         if ((previous_error_in_coordinates < 0 && error_in_coordinates > 0) || (error_in_coordinates < 0 && previous_error_in_coordinates > 0))
+//             accumulated_error = 0;
+
+//         set_translational_backboard_speed(error_in_coordinates * 1 + accumulated_error * 0.001 + difference_in_coordinates);
+
+//         previous_error_in_coordinates = error_in_coordinates;
+//     } while ((abs(difference_in_coordinates) > 0.0001) || abs(error_in_coordinates) > 0.01);
+// }
+
+void set_translational_backboard_speed(double speed_to_translate);
+
+// void AutonUtils::point_turn_PID(double target, const double Kp, const double Ki, const double Kd, bool use_IMU)
+// {
+//     double error, derivative, integral, change_time, previous_time, previous_error;
+//     do
+//     {
+//         if (use_IMU)
+//         {
+//             error = compute_angle_error(target, convert_deg_to_rad(IMU.get_heading()));
+//         }
+//         else
+//         {
+//             error = compute_angle_error(target, get_constrained_alpha());
+//         }
+
+//         derivative = (previous_error - error);
+
+//         if (abs(error) < 0.349066) // 20 degrees
+//         {
+//             integral += error;
+//         }
+//         else
+//         {
+//             integral = 0;
+//         }
+
+//         if ((previous_error < 0 && error > 0) || (error < 0 && previous_error > 0))
+//             integral = 0;
+
+//         set_turn(error * Kp + integral * Ki + derivative * Kd);
+
+//         // pros::lcd::set_text(6, "the error is: " + std::to_string(error * 180 / pi));
+//         // pros::lcd::set_text(7, "the target is: " + std::to_string(convert_rad_to_deg_wraped(target)));
+//         // pros::lcd::set_text(4, "the derivative is: " + std::to_string(derivative));
+//         // pros::lcd::set_text(3, "the integral is: " + std::to_string(accumulated_error));
+//         // pros::lcd::set_text(5, "PID value is: " + std::to_string(error * Kp + integral * Ki + derivative * Kd));
+//         // pros::lcd::set_text(2, "alpha is: " + std::to_string(get_alpha_in_degrees()));
+
+//         previous_error = error;
+
+//         pros::delay(20);
+
+//     } while (((abs(derivative) > 0.0001) || abs(error) > 0.01));
+
+//     pros::lcd::set_text(0, "pid escaped");
+// }
+
+void AutonUtils::point_turn_PID(double target, bool use_IMU, const double Kp, const double Ki, const double Kd)
+{
+    PID_controller pid_controller(Kp, Ki, Kd, 127, -127);
+    pid_controller.use_integrater_error_bound(convert_deg_to_rad(5));
+    pid_controller.use_crossover_zero();
+    double angle_error;
     do
     {
         if (use_IMU)
         {
-            error = compute_error(target, convert_deg_to_rad(IMU.get_heading()));
+            angle_error = compute_angle_error(convert_deg_to_rad(target), convert_deg_to_rad(IMU.get_heading()));
         }
         else
         {
-            error = compute_error(target, get_constrained_alpha());
+            angle_error = compute_angle_error(convert_deg_to_rad(target), get_constrained_alpha());
         }
+        angle_error = compute_angle_error(convert_deg_to_rad(target), get_constrained_alpha());
+        double motor_power = pid_controller.compute(angle_error, false);
 
-        derivative = (previous_error - error);
-
-        if (abs(error) < 0.349066) // 20 degrees
-        {
-            integral += error;
-        }
-        else
-        {
-            integral = 0;
-        }
-
-        if ((previous_error < 0 && error > 0) || (error < 0 && previous_error > 0))
-            integral = 0;
-
-        set_turn(error * Kp + integral * Ki + derivative * Kd);
-
-        // pros::lcd::set_text(6, "the error is: " + std::to_string(error * 180 / pi));
-        // pros::lcd::set_text(7, "the target is: " + std::to_string(convert_rad_to_deg_wraped(target)));
-        // pros::lcd::set_text(4, "the derivative is: " + std::to_string(derivative));
-        // pros::lcd::set_text(3, "the integral is: " + std::to_string(accumulated_error));
-        // pros::lcd::set_text(5, "PID value is: " + std::to_string(error * Kp + integral * Ki + derivative * Kd));
-        // pros::lcd::set_text(2, "alpha is: " + std::to_string(get_alpha_in_degrees()));
-
-        previous_error = error;
-
+        set_turn(motor_power);
+        pros::lcd::set_text(4, "the angle error is: " + std::to_string(angle_error * 180 / pi));
+        pros::lcd::set_text(3, "the PID value is: " + std::to_string(motor_power));
         pros::delay(20);
-
-    } while (((abs(derivative) > 0.0001) || abs(error) > 0.01));
-
+    } while (abs(pid_controller.get_derivative()) > 0.000000000001 || abs(angle_error) > 0.004);
     pros::lcd::set_text(0, "pid escaped");
 }
 

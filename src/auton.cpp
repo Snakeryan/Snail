@@ -5,6 +5,12 @@
 
 int lower_balls_counted = 0;
 int upper_balls_counted = 0;
+bool is_coordinate_reset = false;
+//get coordinate of object;
+//drive forward for 2 seconds (will slam against tower)
+//move left and right (will most likely use PID)
+// if tower backboard coordinates is centered stop
+//reset odometry coordinates
 
 void set_intake(int power)
 {
@@ -60,9 +66,9 @@ void run_auton_sensors()
         // pros::lcd::set_text(3, "left: " + std::to_string(autonutils.get_left_encoder_distance()));
         // pros::lcd::set_text(4, "right: " + std::to_string(autonutils.get_right_encoder_distance()));
 
-        pros::lcd::set_text(6, "upper balls counted: " + std::to_string(upper_balls_counted));
-        pros::lcd::set_text(5, "light: " + std::to_string((get_light_calibrated_value())));
-        pros::lcd::set_text(7, "lower balls counted: " + std::to_string((lower_balls_counted)));
+        // pros::lcd::set_text(6, "upper balls counted: " + std::to_string(upper_balls_counted));
+        // pros::lcd::set_text(5, "light: " + std::to_string((get_light_calibrated_value())));
+        // pros::lcd::set_text(7, "lower balls counted: " + std::to_string((lower_balls_counted)));
 
         pros::Task::delay(10);
     }
@@ -145,17 +151,6 @@ void wait_until_number_of_lower_balls_counted(int number_of_balls_passed)
     }
 }
 
-// function score_in_goal(num_balls):
-// while (upperballscounted < target)):
-// - activate flywheel
-// - activate indexer and if upper_limit_switch is not pressed
-// - else: stop indexer; delay 20
-
-//
-
-//if upper_limit is pressed: indexer = 0; pros::delay(50);
-//else indexer = 127;
-
 void score_in_goal(int num_balls)
 {
     flywheel = 127;
@@ -194,11 +189,9 @@ void score_in_goal_with_light(int num_balls)
 
 void test_mode()
 {
-    set_intake(127);
-    score_in_goal_with_light(2);
-    set_intake(0);
+    autonutils.drive_to_tower_backboard(0);
+    // autonutils.drive_to_point(20, 0, 0, false, false);
 }
-
 void deploy_intakes()
 {
     set_intake(127);
@@ -211,8 +204,11 @@ void deploy_intakes()
 void run_skills()
 {
     autonutils.set_current_global_position(0, 0, 0);
+    test_mode();
+    stop_drive_motors();
+    return;
     // deploy_intakes();
-    set_intake(127); 
+    set_intake(127);
     autonutils.drive_to_point(0, 13.72, 0, false, true);
     autonutils.drive_to_point(20.10, 6.70, 135.5, false, false, NULL, 0, 3000);
     stop_drive_motors();
@@ -227,20 +223,23 @@ void run_skills()
     set_intake(0);
 
     //WAYPOINT to tower two:
-    autonutils.drive_to_point(7.54, 29.62, 200, false, true, []() { dispense_triggered = true; }, 15);
+    autonutils.drive_to_point(
+        7.54, 29.62, 200, false, true, []() { dispense_triggered = true; }, 15);
 
     // dispense the two blue balls and collect a red ball:
     set_intake(127);
     // autonutils.drive_to_point(-1.88, 45.36, 329.9, false, true);
-    
-    autonutils.drive_to_point(-2.15, 49.93, 329.7, false, false, []() { indexer = 127; flywheel = 0; }, 3);
+
+    autonutils.drive_to_point(
+        -2.15, 49.93, 329.7, false, false, []() { indexer = 127; flywheel = 0; }, 3);
 
     autonutils.drive_to_point(-11.01, 62.10, 0, false, false);
 
     //drive and turn to tower two:
     autonutils.turn_to_point(16.81, 60.97);
     indexer = 127;
-    autonutils.drive_to_point(16.81, 60.97, 91.34, false, false, [](){flywheel = -127;}, 20, 2000);
+    autonutils.drive_to_point(
+        16.81, 60.97, 91.34, false, false, []() { flywheel = -127; }, 20, 2000);
     stop_drive_motors();
 
     //reset the number of balls counted:
@@ -266,14 +265,16 @@ void run_skills()
     upper_balls_counted = 0;
 
     // score in tower three:
+    set_intake(127);
     score_in_goal_with_light(1);
     indexer = 127;
-    set_intake(127);
+
     wait_until_number_of_lower_balls_counted(2);
     set_intake(0);
 
     //dispense the blue balls from tower two and three:
-    autonutils.drive_to_point(-2.96, 92.82, 46.11, false, true, []() { flywheel = -127; indexer = -127; set_intake(-127); }, 32);
+    autonutils.drive_to_point(
+        -2.96, 92.82, 46.11, false, true, []() { flywheel = -127; indexer = -127; set_intake(-127); }, 32);
     autonutils.drive_to_point(-12.14, 97.69, 243.98, false, false, NULL, 0, 2000);
     flywheel = 0;
     indexer = 127;
@@ -294,7 +295,6 @@ void run_skills()
     // set_intake(127);
     // wait_until_number_of_lower_balls_counted(1);
     set_intake(0);
-    
 }
 
 /**
