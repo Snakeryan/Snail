@@ -1,7 +1,8 @@
 #include <iostream>
 #include "main.h"
 #include "auton.h"
-#include "globals.h" #include "PID_controller.h"
+#include "globals.h"
+#include "PID_controller.h"
 
 //motion profiling functions:
 /*
@@ -31,7 +32,7 @@ const T &constrain(const T &x, const T &a, const T &b)
         return x;
 }
 
-AutonUtils::AutonUtils(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM)
+DriveTrain::DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM)
 {
     this->encoder_wheel_radius = encoder_wheel_radius;
     this->wL = wL;
@@ -46,7 +47,7 @@ AutonUtils::AutonUtils(double encoder_wheel_radius, double wL, double wR, double
     this->encoderM = encoderM;
 }
 
-double AutonUtils::compute_alpha(double right_encoder_distance, double left_encoder_distance)
+double DriveTrain::compute_alpha(double right_encoder_distance, double left_encoder_distance)
 {
     return (left_encoder_distance - right_encoder_distance) / (wL + wR);
 }
@@ -54,17 +55,17 @@ double AutonUtils::compute_alpha(double right_encoder_distance, double left_enco
 //method to convert from encoder ticks to wheels for all of the encoder wheels
 //formula (2πr/360) * ticks:
 
-double AutonUtils::get_left_encoder_distance()
+double DriveTrain::get_left_encoder_distance()
 {
     return ((2 * encoder_wheel_radius * pi) / 360) * encoderL->get_value();
 }
 
-double AutonUtils::get_right_encoder_distance()
+double DriveTrain::get_right_encoder_distance()
 {
     return ((2 * encoder_wheel_radius * pi) / 360) * encoderR->get_value();
 }
 
-double AutonUtils::get_middle_encoder_distance()
+double DriveTrain::get_middle_encoder_distance()
 {
     return ((2 * encoder_wheel_radius * pi) / 360) * encoderM->get_value();
 }
@@ -72,7 +73,7 @@ double AutonUtils::get_middle_encoder_distance()
 //method to compute alpha (should also average it with the imu readings)
 //formula is alpha = (right encoder value reading - left encoder value reading)/width of the robot:
 
-double AutonUtils::compute_delta_alpha(double delta_right_distance, double delta_left_distance)
+double DriveTrain::compute_delta_alpha(double delta_right_distance, double delta_left_distance)
 {
     double delta_alpha = (delta_left_distance - delta_right_distance) / (wL + wR);
     return delta_alpha;
@@ -81,7 +82,7 @@ double AutonUtils::compute_delta_alpha(double delta_right_distance, double delta
 //method to compute Dly
 //formula is 2sin(alpha/2) * (right encoder value + (arcR/alpha))
 
-double AutonUtils::compute_delta_Dly(double delta_alpha, double delta_right_distance)
+double DriveTrain::compute_delta_Dly(double delta_alpha, double delta_right_distance)
 {
     if (delta_alpha == 0)
     {
@@ -93,7 +94,7 @@ double AutonUtils::compute_delta_Dly(double delta_alpha, double delta_right_dist
 //method to comput Dlx
 //formula is 2sin(alpha/2) * (middle tracking wheel value/alpha - wM)
 
-double AutonUtils::compute_delta_Dlx(double delta_alpha, double delta_middle_distance)
+double DriveTrain::compute_delta_Dlx(double delta_alpha, double delta_middle_distance)
 {
     if (delta_alpha == 0)
     {
@@ -105,17 +106,17 @@ double AutonUtils::compute_delta_Dlx(double delta_alpha, double delta_middle_dis
 //method to convert from local variables to global variables
 //formulas are: globalX = (Dlx * cos(alpha/2)) + (Dly * sin(alpha/2)) globalY = (Dly * cos(alpha/2)) - (Dlx * sin(alpha/2)):
 
-double AutonUtils::compute_delta_globalX(double Dlx, double Dly, double delta_alpha)
+double DriveTrain::compute_delta_globalX(double Dlx, double Dly, double delta_alpha)
 {
     return (Dlx * cos(delta_alpha / 2 + prev_alpha)) + (Dly * sin(delta_alpha / 2 + prev_alpha));
 }
 
-double AutonUtils::compute_delta_globalY(double Dlx, double Dly, double delta_alpha)
+double DriveTrain::compute_delta_globalY(double Dlx, double Dly, double delta_alpha)
 {
     return (Dly * cos(delta_alpha / 2 + prev_alpha)) - (Dlx * sin(delta_alpha / 2 + prev_alpha));
 }
 
-double AutonUtils::convert_rad_to_deg_wraped(double rad)
+double DriveTrain::convert_rad_to_deg_wraped(double rad)
 {
     double deg = (rad * 180) / pi;
 
@@ -128,25 +129,25 @@ double AutonUtils::convert_rad_to_deg_wraped(double rad)
     return deg;
 }
 
-double AutonUtils::convert_rad_to_deg(double rad)
+double DriveTrain::convert_rad_to_deg(double rad)
 {
     return (rad * 180) / pi;
 }
 
-double AutonUtils::get_alpha_in_degrees()
+double DriveTrain::get_alpha_in_degrees()
 {
     return convert_rad_to_deg_wraped(alpha);
 }
 
 //method to convert from degrees to radians
 //formula is 1deg * π/180:
-double AutonUtils::convert_deg_to_rad(double deg)
+double DriveTrain::convert_deg_to_rad(double deg)
 {
     return (deg * pi) / 180;
 }
 
 //method to update functions:
-void AutonUtils::update()
+void DriveTrain::update_odometry()
 {
     update_odometry_mutex.take(1000);
     double left_encoder_distance = get_left_encoder_distance();
@@ -177,7 +178,7 @@ void AutonUtils::update()
     update_odometry_mutex.give();
 }
 
-void AutonUtils::set_current_global_position(double new_X, double new_Y, double new_alpha_in_degrees)
+void DriveTrain::set_current_global_position(double new_X, double new_Y, double new_alpha_in_degrees)
 {
     update_odometry_mutex.take(1000);
     globalX = new_X;
@@ -187,7 +188,7 @@ void AutonUtils::set_current_global_position(double new_X, double new_Y, double 
     update_odometry_mutex.give();
 }
 
-void AutonUtils::turn_to_point(double destX, double destY)
+void DriveTrain::turn_to_point(double destX, double destY)
 {
     double angle = atan2(destX - globalX, destY - globalY);
     if (angle < 0)
@@ -199,15 +200,6 @@ void AutonUtils::turn_to_point(double destX, double destY)
 }
 
 /*
-functions to calculate main variable:
-
-T = arctan2(Dly, Dlx)
-
-S = MIN(sqrt(pow(Dlx, 2) + pow(Dly, 2)), 1)
-
-*/
-
-/*
 functions to calculate intermediate steps:
 
 P1 = -cos(T + pi/4)
@@ -217,17 +209,17 @@ P2 = sin(T + pi/4)
 s = max(abs(P1), abs(P2)) / S
 */
 
-double AutonUtils::compute_P1(double T)
+double DriveTrain::compute_P1(double T)
 {
     return -cos(T + pi / 4);
 }
 
-double AutonUtils::compute_P2(double T)
+double DriveTrain::compute_P2(double T)
 {
     return sin(T + pi / 4);
 }
 
-double AutonUtils::compute_s(double P1, double P2, double S)
+double DriveTrain::compute_s(double P1, double P2, double S)
 {
     return MAX(abs(P1), abs(P2)) / S;
 }
@@ -244,31 +236,31 @@ double AutonUtils::compute_s(double P1, double P2, double S)
     BR = P2/s(1 - abs(R)) - R * S
 */
 
-void AutonUtils::compute_FL_motor_speed(double P2, double s, double K_constant, double R, double multiplier)
+void DriveTrain::compute_FL_motor_speed(double P2, double s, double K_constant, double R, double multiplier)
 {
     double FL_speed = (P2 / s) * (1 - abs(R)) + R * K_constant;
     FL->move_voltage(FL_speed * 12700 * multiplier);
 }
 
-void AutonUtils::compute_FR_motor_speed(double P1, double s, double K_constant, double R, double multiplier)
+void DriveTrain::compute_FR_motor_speed(double P1, double s, double K_constant, double R, double multiplier)
 {
     double FR_speed = ((P1 / s) * (1 - abs(R)) - R * K_constant) * -1;
     FR->move_voltage(FR_speed * 12700 * multiplier);
 }
 
-void AutonUtils::compute_BL_motor_speed(double P1, double s, double K_constant, double R, double multiplier)
+void DriveTrain::compute_BL_motor_speed(double P1, double s, double K_constant, double R, double multiplier)
 {
     double BL_speed = ((P1 / s) * (1 - abs(R)) + R * K_constant);
     BL->move_voltage(BL_speed * 12700 * multiplier);
 }
 
-void AutonUtils::compute_BR_motor_speed(double P2, double s, double K_constant, double R, double multiplier)
+void DriveTrain::compute_BR_motor_speed(double P2, double s, double K_constant, double R, double multiplier)
 {
     double BR_speed = ((P2 / s) * (1 - abs(R)) - R * K_constant) * -1;
     BR->move_voltage(BR_speed * 127000 * multiplier);
 }
 
-void AutonUtils::set_turn(int turn)
+void DriveTrain::set_turn(int turn)
 {
     FL->move_voltage(turn * 1000);
     FR->move_voltage(turn * 1000);
@@ -276,7 +268,7 @@ void AutonUtils::set_turn(int turn)
     BL->move_voltage(turn * 1000);
 }
 
-double AutonUtils::compute_angle_error(double target, double current_angle)
+double DriveTrain::compute_angle_error(double target, double current_angle)
 {
     double error = current_angle - target;
     if (error < -pi)
@@ -299,7 +291,7 @@ double AutonUtils::compute_angle_error(double target, double current_angle)
 
 // function to drive to a point with and without turning:
 
-void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint, const std::function<void()> &trigger, int trigger_distance, double timeout)
+void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint, const std::function<void()> &trigger, int trigger_distance, double timeout)
 {
     //hyperparameters:
     const double rotational_KP = 2;
@@ -412,14 +404,14 @@ void AutonUtils::drive_to_point(double tX, double tY, double target_angle_in_deg
     pros::lcd::set_text(0, "drive_to_point exited");
 }
 
-void AutonUtils::drive_to_tower_backboard(double target_angle)
+void DriveTrain::drive_to_tower_backboard(double target_angle)
 {
     //turn to a specified angle
-    // autonutils.point_turn_PID(target_angle, true);
+    // drivetrain.point_turn_PID(target_angle, true);
 
     //move laterally to center of the backboard:
     pros::vision_object_s_t backboard, prev_backboard;
-    PID_controller pid_controller(0.00001, 0, 0, 0, 1);
+    PID_controller pid_controller(0.01, 0, 0, 1, 0);
     do
     {
         backboard = vision_sensor.get_by_size(0);
@@ -452,7 +444,10 @@ void AutonUtils::drive_to_tower_backboard(double target_angle)
         double angle_error = 0; // compute_angle_error(target_angle, convert_deg_to_rad(IMU.get_heading()));
 
         double T = atan2(0, distance_error);
+
         double S = pid_controller.compute(abs(distance_error));
+
+        pros::lcd::set_text(3, "S: " + std::to_string(S));
 
         double arc_length_error = angle_error * wR;
 
@@ -465,7 +460,7 @@ void AutonUtils::drive_to_tower_backboard(double target_angle)
     } while (true); //abs(pid_controller.get_error()) > 0.2);
 }
 
-void AutonUtils::run_Xdrive(double T, double S, double R)
+void DriveTrain::run_Xdrive(double T, double S, double R)
 {
     double P1 = compute_P1(T);
     double P2 = compute_P2(T);
@@ -478,7 +473,7 @@ void AutonUtils::run_Xdrive(double T, double S, double R)
     compute_BR_motor_speed(P2, s, 1, R, 2);
 }
 
-void AutonUtils::set_translational_backboard_speed(double translational_speed)
+void DriveTrain::set_translational_backboard_speed(double translational_speed)
 {
     if (translational_speed < 0)
     {
@@ -496,7 +491,7 @@ void AutonUtils::set_translational_backboard_speed(double translational_speed)
     }
 }
 
-// void AutonUtils::drive_to_tower_backboard(double IMU_angle_to_turn)
+// void DriveTrain::drive_to_tower_backboard(double IMU_angle_to_turn)
 // {
 //     double error_in_coordinates, difference_in_coordinates, accumulated_error, previous_error_in_coordinates = 0;
 //     pros::vision_object_s_t backboard;
@@ -504,7 +499,7 @@ void AutonUtils::set_translational_backboard_speed(double translational_speed)
 //     {
 //         backboard = vision_sensor.get_by_size(0);
 //         double X = backboard.x_middle_coord;
-//         autonutils.point_turn_PID(IMU_angle_to_turn, 40, .7, -43, true);
+//         drivetrain.point_turn_PID(IMU_angle_to_turn, 40, .7, -43, true);
 
 //         error_in_coordinates = 255 - X;
 //         difference_in_coordinates = previous_error_in_coordinates - error_in_coordinates;
@@ -528,7 +523,7 @@ void AutonUtils::set_translational_backboard_speed(double translational_speed)
 
 void set_translational_backboard_speed(double speed_to_translate);
 
-// void AutonUtils::point_turn_PID(double target, const double Kp, const double Ki, const double Kd, bool use_IMU)
+// void DriveTrain::point_turn_PID(double target, const double Kp, const double Ki, const double Kd, bool use_IMU)
 // {
 //     double error, derivative, integral, change_time, previous_time, previous_error;
 //     do
@@ -574,7 +569,7 @@ void set_translational_backboard_speed(double speed_to_translate);
 //     pros::lcd::set_text(0, "pid escaped");
 // }
 
-void AutonUtils::point_turn_PID(double target, bool use_IMU, const double Kp, const double Ki, const double Kd)
+void DriveTrain::point_turn_PID(double target, bool use_IMU, const double Kp, const double Ki, const double Kd)
 {
     PID_controller pid_controller(Kp, Ki, Kd, 127, -127);
     pid_controller.use_integrater_error_bound(convert_deg_to_rad(5));
@@ -601,28 +596,28 @@ void AutonUtils::point_turn_PID(double target, bool use_IMU, const double Kp, co
     pros::lcd::set_text(0, "pid escaped");
 }
 
-void AutonUtils::start_update_thread()
+void DriveTrain::start_odometry_update_thread()
 {
     while (true)
     {
-        update();
+        update_odometry();
         pros::Task::delay(10);
     }
 }
 
-void AutonUtils::make_update_thread()
+void DriveTrain::make_odometry_update_thread()
 {
-    task = std::make_shared<pros::Task>([this] { start_update_thread(); });
+    task = std::make_shared<pros::Task>([this] { start_odometry_update_thread(); });
 }
 
 //getter for globalX:
 
-double AutonUtils::get_globalX()
+double DriveTrain::get_globalX()
 {
     return globalX;
 }
 
-double AutonUtils::get_constrained_alpha()
+double DriveTrain::get_constrained_alpha()
 {
     double theta = alpha;
     theta = fmod(theta, TAU);
@@ -635,14 +630,14 @@ double AutonUtils::get_constrained_alpha()
 
 //getter for globalY
 
-double AutonUtils::get_globalY()
+double DriveTrain::get_globalY()
 {
     return globalY;
 }
 
 //destructor:
 
-AutonUtils::~AutonUtils()
+DriveTrain::~DriveTrain()
 {
     if (task.get() != nullptr)
     {

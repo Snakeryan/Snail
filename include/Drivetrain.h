@@ -1,5 +1,5 @@
-#ifndef AUTON_UTILS
-#define AUTON_UTILS
+#ifndef drivetrain_H
+#define drivetrain_H
 
 /******************************************************************************/
 /**           General methods for smooth, autonomous movements               **/
@@ -9,16 +9,16 @@
 #include <pthread.h>
 #include <memory>
 
-class AutonUtils
+class DriveTrain
 {
 
     // Task that updates the odometry functions:
     pros::Mutex update_odometry_mutex;
 
-    // all data members of the AutonUtils class:
+    // all data members of the DriveTrain class:
     double encoder_wheel_radius, wL, wR, wM, globalX, globalY, alpha, prev_alpha, prev_left_encoder_distance, prev_right_encoder_distance, prev_middle_encoder_distance;
 
-    //shared pointer to ensure that the update task(s) will never outlive your function
+    //shared pointer to ensure that the update_odometry task(s) will never outlive your function
     std::shared_ptr<pros::Task> task{nullptr};
 
     // pointers to allow for your motor/sensor parameters to be accessed:
@@ -192,12 +192,12 @@ class AutonUtils
     /** 
  *        main funcition for odometry, as it is where all of the variables are updated and absolute coordinates are calculated
 */
-    void update();
+    void update_odometry();
 
     /** 
- *        this puts the update function into a while(true) loop with a very small delay of ten miliseconds 
+ *        this puts the update_odometry function into a while(true) loop with a very small delay of ten miliseconds 
 */
-    void start_update_thread();
+    void start_odometry_update_thread();
 
     /**
  *        this is the formula used by this method: (rad * 180)/pi
@@ -259,9 +259,9 @@ class AutonUtils
 
 public:
     /**
- *        this function calls start_update_thread() to create a seperate task for updating the odometry variables
+ *        this function calls start_odometry_update_thread() to create a seperate task for updating the odometry variables
 */
-    void make_update_thread();
+    void make_odometry_update_thread();
 
     /** 
  *        this method calls all of the motion algorithm functions and allows you to smoothly turn and drive to a point (requires X-drive)
@@ -296,7 +296,7 @@ public:
     void set_current_global_position(double new_X, double new_Y, double new_alpha_in_degrees);
 
     /** 
- *        constructor for the AutonUtils class
+ *        constructor for the DriveTrain class
  * \param encoder_wheel_radius
  *        the radius of your tracking wheels (takes inches and if you are using the smallest wheels, they have a radius of 1.375 inches)
  * \param wL
@@ -320,7 +320,7 @@ public:
  * \param encoderM
  *        the address of your middle encoder goes here
 */
-    AutonUtils(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM);
+    DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM);
 
     /**  
  * \return the heading of the robot in degrees (wrapped from 0-360)
@@ -352,24 +352,23 @@ public:
 */
     double get_middle_encoder_distance();
 
+    void set_translational_backboard_speed(double translational_speed);
+
+    void drive_to_tower_backboard(double IMU_angle_to_turn);
+
     /** 
  *        this method is a PID loop for turning to a specific angle
  * \param target
  *        the target angle you want the robot to face (in degrees)
+ * \param use_IMU
+ *        if you want to not use the angle calculated by odometry and use the IMU, then set this parameter to true
  * \param Kp
  *        the Proportional control constant to multiply by (has default of 37.5, but recommend changing to work for your robot) 
  * \param Ki
  *        the integral control constant to multiply by (has default of 0.7, but recommend changing to work for your robot) 
  * \param Kd
  *        the derivative control constant to multiply by (has default of -0, as this constant is supposed to be negative)
- * \param use_IMU
- *        if you want to not use the angle calculated by odometry and use the IMU, then set this parameter to true
- * 
 */
-    void set_translational_backboard_speed(double translational_speed);
-
-    void drive_to_tower_backboard(double IMU_angle_to_turn);
-
     void point_turn_PID(double target, bool use_IMU = false, const double Kp = 30, const double Ki = 1.1, const double Kd = -65);
 
     /** 
@@ -382,11 +381,11 @@ public:
     void turn_to_point(double X2, double Y2);
 
     /** 
- *        a destructor to make sure that the update task never outlives the object
+ *        a destructor to make sure that the update_odometry task never outlives the object
 */
     void run_Xdrive(double T, double S, double R);
 
-    ~AutonUtils();
+    ~DriveTrain();
 };
 
 #endif

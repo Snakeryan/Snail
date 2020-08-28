@@ -1,6 +1,6 @@
 #include "main.h"
 #include "auton.h"
-#include "auton_utils.h"
+#include "drivetrain.h"
 #include "globals.h"
 
 int lower_balls_counted = 0;
@@ -63,8 +63,8 @@ void run_auton_sensors()
 
         prev_light_value = get_light_calibrated_value();
 
-        // pros::lcd::set_text(3, "left: " + std::to_string(autonutils.get_left_encoder_distance()));
-        // pros::lcd::set_text(4, "right: " + std::to_string(autonutils.get_right_encoder_distance()));
+        // pros::lcd::set_text(3, "left: " + std::to_string(drivetrain.get_left_encoder_distance()));
+        // pros::lcd::set_text(4, "right: " + std::to_string(drivetrain.get_right_encoder_distance()));
 
         // pros::lcd::set_text(6, "upper balls counted: " + std::to_string(upper_balls_counted));
         // pros::lcd::set_text(5, "light: " + std::to_string((get_light_calibrated_value())));
@@ -78,8 +78,8 @@ void debug_autonomous()
 {
     while (true)
     {
-        pros::lcd::set_text(1, "x, y: (" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")");
-        pros::lcd::set_text(2, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
+        pros::lcd::set_text(1, "x, y: (" + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")");
+        pros::lcd::set_text(2, "alpha: " + std::to_string(drivetrain.get_alpha_in_degrees()));
 
         pros::Task::delay(20);
     }
@@ -91,7 +91,7 @@ void go_home()
     {
         if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X))
         {
-            autonutils.drive_to_point(0, 0, 0, true, false);
+            drivetrain.drive_to_point(0, 0, 0, true, false);
         }
     }
 }
@@ -109,10 +109,10 @@ void run_homerow()
     // pros::Task autonomous_debugger(debug_autonomous);
 
     set_intake(127);
-    autonutils.drive_to_point(0, -15, 45, false, true);
+    drivetrain.drive_to_point(0, -15, 45, false, true);
 
     // First Goal
-    autonutils.drive_to_point(16.2, -6.7, 46, false, false);
+    drivetrain.drive_to_point(16.2, -6.7, 46, false, false);
     auto_sort_balls = true;
     stop_drive_motors();
 
@@ -128,8 +128,8 @@ void run_homerow()
     // auto_sort_balls = false;
     set_flywheel_and_indexer(0, 0);
     set_intake(0);
-    autonutils.drive_to_point(-37.1, -23.7, 0, false, true);
-    autonutils.drive_to_point(-37.5, -9.6, 0, false, false);
+    drivetrain.drive_to_point(-37.1, -23.7, 0, false, true);
+    drivetrain.drive_to_point(-37.5, -9.6, 0, false, false);
     stop_drive_motors();
 
     go_home();
@@ -189,7 +189,7 @@ void score_in_goal_with_light(int num_balls)
 
 void test_mode()
 {
-    autonutils.drive_to_tower_backboard(0);
+    drivetrain.drive_to_tower_backboard(0);
     // autonutils.drive_to_point(20, 0, 0, false, false);
 }
 void deploy_intakes()
@@ -203,14 +203,14 @@ void deploy_intakes()
 
 void run_skills()
 {
-    autonutils.set_current_global_position(0, 0, 0);
+    drivetrain.set_current_global_position(0, 0, 0);
     test_mode();
     stop_drive_motors();
     return;
     // deploy_intakes();
     set_intake(127);
-    autonutils.drive_to_point(0, 13.72, 0, false, true);
-    autonutils.drive_to_point(20.10, 6.70, 135.5, false, false, NULL, 0, 3000);
+    drivetrain.drive_to_point(0, 13.72, 0, false, true);
+    drivetrain.drive_to_point(20.10, 6.70, 135.5, false, false, NULL, 0, 3000);
     stop_drive_motors();
     // Score 2 red balls:
     score_in_goal_with_light(2);
@@ -223,22 +223,22 @@ void run_skills()
     set_intake(0);
 
     //WAYPOINT to tower two:
-    autonutils.drive_to_point(
+    drivetrain.drive_to_point(
         7.54, 29.62, 200, false, true, []() { dispense_triggered = true; }, 15);
 
     // dispense the two blue balls and collect a red ball:
     set_intake(127);
-    // autonutils.drive_to_point(-1.88, 45.36, 329.9, false, true);
+    // drivetrain.drive_to_point(-1.88, 45.36, 329.9, false, true);
 
-    autonutils.drive_to_point(
+    drivetrain.drive_to_point(
         -2.15, 49.93, 329.7, false, false, []() { indexer = 127; flywheel = 0; }, 3);
 
-    autonutils.drive_to_point(-11.01, 62.10, 0, false, false);
+    drivetrain.drive_to_point(-11.01, 62.10, 0, false, false);
 
     //drive and turn to tower two:
-    autonutils.turn_to_point(16.81, 60.97);
+    drivetrain.turn_to_point(16.81, 60.97);
     indexer = 127;
-    autonutils.drive_to_point(
+    drivetrain.drive_to_point(
         16.81, 60.97, 91.34, false, false, []() { flywheel = -127; }, 20, 2000);
     stop_drive_motors();
 
@@ -254,10 +254,10 @@ void run_skills()
     set_intake(0);
 
     //WAYPOINT to tower three:
-    autonutils.drive_to_point(-1.40, 110.37, 52, false, true);
+    drivetrain.drive_to_point(-1.40, 110.37, 52, false, true);
 
     //drive to tower three:
-    autonutils.drive_to_point(19.63, 119.14, 46.50, false, false, NULL, 0, 2000);
+    drivetrain.drive_to_point(19.63, 119.14, 46.50, false, false, NULL, 0, 2000);
     stop_drive_motors();
 
     //reset the number of balls counted:
@@ -273,16 +273,16 @@ void run_skills()
     set_intake(0);
 
     //dispense the blue balls from tower two and three:
-    autonutils.drive_to_point(
+    drivetrain.drive_to_point(
         -2.96, 92.82, 46.11, false, true, []() { flywheel = -127; indexer = -127; set_intake(-127); }, 32);
-    autonutils.drive_to_point(-12.14, 97.69, 243.98, false, false, NULL, 0, 2000);
+    drivetrain.drive_to_point(-12.14, 97.69, 243.98, false, false, NULL, 0, 2000);
     flywheel = 0;
     indexer = 127;
     set_intake(127);
 
     //collect the next ball and drive to tower four:
-    autonutils.drive_to_point(-23.64, 93.56, 242.01, false, false);
-    autonutils.drive_to_point(-36.49, 113.07, 356.42, false, false, NULL, 0, 2000);
+    drivetrain.drive_to_point(-23.64, 93.56, 242.01, false, false);
+    drivetrain.drive_to_point(-36.49, 113.07, 356.42, false, false, NULL, 0, 2000);
     stop_drive_motors();
 
     //reset the number of balls counted:

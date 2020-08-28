@@ -1,7 +1,7 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 #include "main.h"
-#include "auton_utils.h"
+#include "drivetrain.h"
 
 //variable to know if you want to auto sort balls
 extern bool auto_sort_balls;
@@ -22,7 +22,7 @@ namespace auton_modes
 extern auton_modes::Auton_mode auton_mode;
 
 //object of class autonUtils
-extern AutonUtils autonutils;
+extern DriveTrain drivetrain;
 
 //motors:
 extern pros::Motor intakeleft;

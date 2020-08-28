@@ -78,7 +78,7 @@ void opcontrol(void);
 //#include <iostream>
 #include "globals.h"
 #include "auton.h"
-#include "auton_utils.h"
+#include "drivetrain.h"
 
 #endif
 

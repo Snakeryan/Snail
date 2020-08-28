@@ -1,6 +1,6 @@
 #include "main.h"
 #include "auton.h"
-#include "auton_utils.h"
+#include "drivetrain.h"
 #include "globals.h"
 
 void calibrate_IMU()
@@ -102,7 +102,7 @@ void initialize()
 {
 	light_sensor.calibrate();
 	setup_sensors();
-	autonutils.make_update_thread();
+	drivetrain.make_odometry_update_thread();
 	pros::Task flywheel_manager_task(manage_indexer_and_flywheel);
 	pros::lcd::initialize();
 	pros::lcd::register_btn1_cb(on_center_button);
@@ -253,8 +253,8 @@ void display_data()
 {
 	while (true)
 	{
-		pros::lcd::set_text(1, "(X, Y): (" + std::to_string(autonutils.get_globalX()) + ", " + std::to_string(autonutils.get_globalY()) + ")");
-		pros::lcd::set_text(2, "alpha: " + std::to_string(autonutils.get_alpha_in_degrees()));
+		pros::lcd::set_text(1, "(X, Y): (" + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")");
+		pros::lcd::set_text(2, "alpha: " + std::to_string(drivetrain.get_alpha_in_degrees()));
 		pros::lcd::set_text(4, std::to_string((int)indexer.get_temperature()) + "; " + std::to_string((int)flywheel.get_temperature()));
 		// pros::lcd::set_text(3, std::to_string((int)FL.get_temperature()) + "; " + std::to_string((int)FR.get_temperature()) + "; " + std::to_string((int)BL.get_temperature()) + "; " + std::to_string((int)BR.get_temperature()));
 		pros::lcd::set_text(2, "alpha with imu: " + std::to_string(IMU.get_heading()));

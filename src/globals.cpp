@@ -6,8 +6,8 @@ bool auto_sort_balls = false;
 //variable to know if you want to dispense (this is for autonomous):
 bool dispense_triggered = false;
 
-//object of class AutonUtils:
-AutonUtils autonutils(1.375, 6.9922569449, 6.9922569449, 5.16732, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM);
+//object of class DriveTrain:
+DriveTrain drivetrain(1.375, 6.9922569449, 6.9922569449, 5.16732, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM);
 
 //motors:
 pros::Motor intakeleft(11, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_COUNTS);
