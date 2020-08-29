@@ -4,19 +4,6 @@
 #include "globals.h"
 #include "PID_controller.h"
 
-//motion profiling functions:
-/*
-    functions to calculate the speed to turn the motors:
-
-    FL = P2/s(1 - abs(R)) + R * S
-
-    FR = P1/s(1 - abs(R)) - R * S
-
-    BL = P1/s(1 - abs(R)) + R * S
-
-    BR = P2/s(1 - abs(R)) - R * S
-*/
-
 template <class T>
 const T &constrain(const T &x, const T &a, const T &b)
 {
@@ -32,7 +19,7 @@ const T &constrain(const T &x, const T &a, const T &b)
         return x;
 }
 
-DriveTrain::DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM)
+DriveTrain::DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU)
 {
     this->encoder_wheel_radius = encoder_wheel_radius;
     this->wL = wL;
@@ -45,6 +32,8 @@ DriveTrain::DriveTrain(double encoder_wheel_radius, double wL, double wR, double
     this->encoderL = encoderL;
     this->encoderR = encoderR;
     this->encoderM = encoderM;
+    this->vision_sensor = vision_sensor;
+    this->IMU = IMU;
 }
 
 double DriveTrain::compute_alpha(double right_encoder_distance, double left_encoder_distance)
@@ -257,7 +246,7 @@ void DriveTrain::compute_BL_motor_speed(double P1, double s, double K_constant, 
 void DriveTrain::compute_BR_motor_speed(double P2, double s, double K_constant, double R, double multiplier)
 {
     double BR_speed = ((P2 / s) * (1 - abs(R)) - R * K_constant) * -1;
-    BR->move_voltage(BR_speed * 127000 * multiplier);
+    BR->move_voltage(BR_speed * 12700 * multiplier);
 }
 
 void DriveTrain::set_turn(int turn)
@@ -289,7 +278,18 @@ double DriveTrain::compute_angle_error(double target, double current_angle)
     }
 }
 
-// function to drive to a point with and without turning:
+void DriveTrain::run_Xdrive(double T, double S, double R)
+{
+    double P1 = compute_P1(T);
+    double P2 = compute_P2(T);
+    double s = compute_s(P1, P2, S);
+
+    //how much power to apply to each motor:
+    compute_FL_motor_speed(P2, s, 1, R, 2);
+    compute_FR_motor_speed(P1, s, 1, R, 2);
+    compute_BL_motor_speed(P1, s, 1, R, 2);
+    compute_BR_motor_speed(P2, s, 1, R, 2);
+}
 
 void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint, const std::function<void()> &trigger, int trigger_distance, double timeout)
 {
@@ -407,25 +407,16 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
 void DriveTrain::drive_to_tower_backboard(double target_angle)
 {
     //turn to a specified angle
-    // drivetrain.point_turn_PID(target_angle, true);
+    drivetrain.point_turn_PID(target_angle, true);
 
     //move laterally to center of the backboard:
-    pros::vision_object_s_t backboard, prev_backboard;
+    pros::vision_object_s_t backboard = vision_sensor->get_by_size(0);
     PID_controller pid_controller(0.01, 0, 0, 1, 0);
     do
     {
-        backboard = vision_sensor.get_by_size(0);
+        backboard = vision_sensor->get_by_size(0);
         pros::lcd::set_text(7, "signature: " + std::to_string(backboard.signature));
 
-        // if (backboard.signature == 3)
-        // {
-        //     prev_backboard = backboard;
-        // }
-        // else
-        // {
-        //     pros::lcd::set_text(7, "did not detect");
-        //     backboard = prev_backboard;
-        // }
         if (backboard.signature != 3)
         {
             pros::delay(20);
@@ -435,19 +426,23 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
             BL->move_voltage(0 * 1000);
             continue;
         }
+        else
+        {
+            pros::lcd::set_text(5, "area: " + std::to_string(backboard.width * backboard.height));
+            pros::lcd::set_text(6, "vision coordinates: ( " + std::to_string(backboard.x_middle_coord) + ", " + std::to_string(backboard.y_middle_coord) + ")");
+        }
 
-        pros::lcd::set_text(5, "area: " + std::to_string(backboard.width * backboard.height));
-        pros::lcd::set_text(6, "vision coordinates: ( " + std::to_string(backboard.x_middle_coord) + ", " + std::to_string(backboard.y_middle_coord) + ")");
+        double distance_error = backboard.x_middle_coord - 210;
 
-        double distance_error = backboard.x_middle_coord - 255;
-
-        double angle_error = 0; // compute_angle_error(target_angle, convert_deg_to_rad(IMU.get_heading()));
+        double angle_error = compute_angle_error(target_angle, convert_deg_to_rad(IMU->get_heading()));
 
         double T = atan2(0, distance_error);
 
         double S = pid_controller.compute(abs(distance_error));
+        S = constrain(S, 0.0, 1.0);
 
         pros::lcd::set_text(3, "S: " + std::to_string(S));
+        pros::lcd::set_text(4, std::to_string((int)FL->get_voltage()) + " " + std::to_string((int)FR->get_voltage()) + " " + std::to_string((int)BL->get_voltage()) + " " + std::to_string((int)BR->get_voltage()));
 
         double arc_length_error = angle_error * wR;
 
@@ -457,22 +452,52 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
         run_Xdrive(T, S, R);
 
         pros::delay(20);
-    } while (true); //abs(pid_controller.get_error()) > 0.2);
+    } while (abs(pid_controller.get_error()) > 0.2);
+    //240, -16
+
+    //diving forward to the center of the game tower:
+    do
+    {
+        backboard = vision_sensor->get_by_size(0);
+        pros::lcd::set_text(7, "signature: " + std::to_string(backboard.signature));
+
+        if (backboard.signature != 3)
+        {
+            pros::delay(20);
+            FL->move_voltage(0 * 1000);
+            FR->move_voltage(0 * 1000);
+            BR->move_voltage(0 * 1000);
+            BL->move_voltage(0 * 1000);
+            continue;
+        }
+        else
+        {
+            pros::lcd::set_text(5, "area: " + std::to_string(backboard.width * backboard.height));
+            pros::lcd::set_text(6, "vision coordinates: ( " + std::to_string(backboard.x_middle_coord) + ", " + std::to_string(backboard.y_middle_coord) + ")");
+        }
+
+        double distance_error = backboard.x_middle_coord - 240;
+
+        double angle_error = compute_angle_error(target_angle, convert_deg_to_rad(IMU->get_heading()));
+
+        double T = atan2(10, distance_error);
+
+        double S = pid_controller.compute(abs(distance_error));
+        S = constrain(S, 0.0, 1.0);
+
+        pros::lcd::set_text(3, "S: " + std::to_string(S));
+        pros::lcd::set_text(4, std::to_string((int)FL->get_voltage()) + " " + std::to_string((int)FR->get_voltage()) + " " + std::to_string((int)BL->get_voltage()) + " " + std::to_string((int)BR->get_voltage()));
+
+        double arc_length_error = angle_error * wR;
+
+        double R = MIN((arc_length_error * 1) / (15 + abs(distance_error)), 1);
+        R = constrain(R, -1.0, 1.0);
+
+        run_Xdrive(T, S, R);
+
+        pros::delay(20);
+    } while (abs(pid_controller.get_error()) > 0.2);
 }
-
-void DriveTrain::run_Xdrive(double T, double S, double R)
-{
-    double P1 = compute_P1(T);
-    double P2 = compute_P2(T);
-    double s = compute_s(P1, P2, S);
-
-    //how much power to apply to each motor:
-    compute_FL_motor_speed(P2, s, 1, R, 2);
-    compute_FR_motor_speed(P1, s, 1, R, 2);
-    compute_BL_motor_speed(P1, s, 1, R, 2);
-    compute_BR_motor_speed(P2, s, 1, R, 2);
-}
-
 void DriveTrain::set_translational_backboard_speed(double translational_speed)
 {
     if (translational_speed < 0)
@@ -579,7 +604,7 @@ void DriveTrain::point_turn_PID(double target, bool use_IMU, const double Kp, co
     {
         if (use_IMU)
         {
-            angle_error = compute_angle_error(convert_deg_to_rad(target), convert_deg_to_rad(IMU.get_heading()));
+            angle_error = compute_angle_error(convert_deg_to_rad(target), convert_deg_to_rad(IMU->get_heading()));
         }
         else
         {
@@ -607,7 +632,7 @@ void DriveTrain::start_odometry_update_thread()
 
 void DriveTrain::make_odometry_update_thread()
 {
-    task = std::make_shared<pros::Task>([this] { start_odometry_update_thread(); });
+    odometry_update_task = std::make_shared<pros::Task>([this] { start_odometry_update_thread(); });
 }
 
 //getter for globalX:
@@ -635,12 +660,63 @@ double DriveTrain::get_globalY()
     return globalY;
 }
 
-//destructor:
+void DriveTrain::set_motors(int FL_motor_power, int FR_motor_power, int BL_motor_power, int BR_motor_power)
+{
+    FL->move_voltage(FL_motor_power * 1000);
+    FR->move_voltage(FR_motor_power * 1000);
+    BL->move_voltage(BL_motor_power * 1000);
+    BR->move_voltage(BR_motor_power * 1000);
+}
+void DriveTrain::stop_drive_motors()
+{
+    set_motors(0, 0, 0, 0);
+}
 
+void DriveTrain::driver_control(double Yaxis, double Xaxis, double turn)
+{
+    double FL_power = Yaxis + Xaxis + (turn);
+    double FR_power = -Yaxis + Xaxis + (turn);
+    double BL_power = Yaxis - Xaxis + (turn);
+    double BR_power = -Yaxis - Xaxis + (turn);
+
+    set_motors(FL_power, FR_power, BL_power, BR_power);
+}
+
+void DriveTrain::calibrate_IMU()
+{
+    pros::lcd::set_text(5, "Calibrating IMU");
+    IMU->reset();
+
+    while (IMU->is_calibrating())
+    {
+        pros::delay(10);
+    }
+}
+
+void DriveTrain::setup_sensors()
+{
+    calibrate_IMU();
+
+    BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
+    RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
+    tower_backboard_signature = pros::Vision::signature_from_utility(3, -4417, -3983, -4200, -5243, -4831, -5037, 11.000, 0);
+
+    vision_sensor->set_signature(1, &BLUE_BALL_SIGNATURE);
+    vision_sensor->set_signature(2, &RED_BALL_SIGNATURE);
+    vision_sensor->set_signature(3, &tower_backboard_signature);
+}
+
+void DriveTrain::setup()
+{
+    setup_sensors();
+    make_odometry_update_thread();
+}
+
+//destructor:
 DriveTrain::~DriveTrain()
 {
-    if (task.get() != nullptr)
+    if (odometry_update_task.get() != nullptr)
     {
-        task->remove();
+        odometry_update_task->remove();
     }
 }

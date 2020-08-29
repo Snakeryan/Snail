@@ -1,13 +1,13 @@
 #include "main.h"
+#include "Scorer.h"
+#include "globals.h"
 
-//variable to know if you want to auto sort balls:
-bool auto_sort_balls = false;
-
-//variable to know if you want to dispense (this is for autonomous):
-bool dispense_triggered = false;
 
 //object of class DriveTrain:
-DriveTrain drivetrain(1.375, 6.9922569449, 6.9922569449, 5.16732, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM);
+DriveTrain drivetrain(1.375, 6.9922569449, 6.9922569449, 5.16732, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM, &vision_sensor, &IMU);
+
+//object of class Scorer:
+Scorer scorer(&intakeleft, &intakeright, &indexer, &flywheel, &vision_sensor, &BLUE_BALL_SIGNATURE, &RED_BALL_SIGNATURE, &tower_backboard_signature, &lower_limit_switch, &light_sensor);
 
 //motors:
 pros::Motor intakeleft(11, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_COUNTS);

@@ -19,7 +19,7 @@ class DriveTrain
     double encoder_wheel_radius, wL, wR, wM, globalX, globalY, alpha, prev_alpha, prev_left_encoder_distance, prev_right_encoder_distance, prev_middle_encoder_distance;
 
     //shared pointer to ensure that the update_odometry task(s) will never outlive your function
-    std::shared_ptr<pros::Task> task{nullptr};
+    std::shared_ptr<pros::Task> odometry_update_task{nullptr};
 
     // pointers to allow for your motor/sensor parameters to be accessed:
     pros::Motor *FL;
@@ -30,6 +30,14 @@ class DriveTrain
     pros::ADIEncoder *encoderR;
     pros::ADIEncoder *encoderM;
 
+    pros::Vision *vision_sensor;
+    pros::vision_signature_s_t BLUE_BALL_SIGNATURE;
+    pros::vision_signature_s_t RED_BALL_SIGNATURE;
+    pros::vision_signature_s_t tower_backboard_signature;
+
+    pros::Imu *IMU;
+
+    void run_Xdrive(double T, double S, double R);
     /**
  *        this method takes inches as its units and it uses this formula: (delta_left_distance - delta_right_distance) / (wL + wR)
  * \param delta_right_distance
@@ -257,12 +265,13 @@ class DriveTrain
 */
     double get_constrained_alpha();
 
-public:
+    void setup_sensors();
     /**
  *        this function calls start_odometry_update_thread() to create a seperate task for updating the odometry variables
 */
     void make_odometry_update_thread();
 
+public:
     /** 
  *        this method calls all of the motion algorithm functions and allows you to smoothly turn and drive to a point (requires X-drive)
  * \param tX
@@ -320,7 +329,7 @@ public:
  * \param encoderM
  *        the address of your middle encoder goes here
 */
-    DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM);
+    DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU);
 
     /**  
  * \return the heading of the robot in degrees (wrapped from 0-360)
@@ -383,7 +392,15 @@ public:
     /** 
  *        a destructor to make sure that the update_odometry task never outlives the object
 */
-    void run_Xdrive(double T, double S, double R);
+    void set_motors(int FL_motor_power, int FR_motor_power, int BL_motor_power, int BR_motor_power);
+
+    void calibrate_IMU();
+
+    void stop_drive_motors();
+
+    void driver_control(double Yaxis, double Xaxis, double turn);
+
+    void setup();
 
     ~DriveTrain();
 };

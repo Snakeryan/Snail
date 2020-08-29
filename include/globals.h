@@ -1,13 +1,10 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
+#include "Scorer.h"
 #include "main.h"
-#include "drivetrain.h"
+#include "Drivetrain.h"
 
-//variable to know if you want to auto sort balls
-extern bool auto_sort_balls;
 
-//variable to know if you want to dispense (this is for autonomous):
-extern bool dispense_triggered;
 
 //namespace to allow for cycling through different autonmous modes
 namespace auton_modes
@@ -23,6 +20,9 @@ extern auton_modes::Auton_mode auton_mode;
 
 //object of class autonUtils
 extern DriveTrain drivetrain;
+
+//object of class Scorer
+extern Scorer scorer;
 
 //motors:
 extern pros::Motor intakeleft;
