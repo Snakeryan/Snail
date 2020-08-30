@@ -16,7 +16,7 @@ class DriveTrain
     pros::Mutex update_odometry_mutex;
 
     // all data members of the DriveTrain class:
-    double encoder_wheel_radius, wL, wR, wM, globalX, globalY, alpha, prev_alpha, prev_left_encoder_distance, prev_right_encoder_distance, prev_middle_encoder_distance;
+    double encoder_wheel_radius, wL, wR, wM, globalX, globalY, alpha, prev_alpha, prev_left_encoder_distance, delta_left_encoder_distance, prev_right_encoder_distance, delta_right_encoder_distance, prev_middle_encoder_distance, delta_middle_encoder_distance;
 
     //shared pointer to ensure that the update_odometry task(s) will never outlive the function
     std::shared_ptr<pros::Task> odometry_update_task{nullptr};
@@ -305,9 +305,8 @@ public:
     void set_current_global_position(double new_X, double new_Y, double new_alpha_in_degrees);
 
     /** 
- *        constructor for the DriveTrain class
  * \param encoder_wheel_radius
- *        the radius of your tracking wheels (takes inches and if you are using the smallest wheels, they have a radius of 1.375 inches)
+ *        the radius of the tracking wheels (takes inches and if you are using the smallest wheels, they have a radius of 1.375 inches)
  * \param wL
  *        the distance from the center of the robot to the center of the left tracking wheel 
  * \param wR
@@ -315,19 +314,19 @@ public:
  * \param wM
  *        the distance from the center of the robot to the center of the middle/back tracking wheel
  * \param FL
- *        the address of your front left motor goes here
+ *        the address of the front left motor
  * \param FR
- *        the address of your front right motor goes here
+ *        the address of the front right motor
  * \param BL 
- *        the address of your back left motor goes here
+ *        the address of the back left motor
  * \param BR
- *        the address of your back right motor goes here
+ *        the address of the back right motor
  * \param encoderL
- *        the address of your left encoder goes here
+ *        the address of the left encoder
  * \param encoderR
- *        the address of your right encoder goes here
+ *        the address of the right encoder
  * \param encoderM
- *        the address of your middle encoder goes here
+ *        the address of the middle encoder
 */
     DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU);
 
@@ -391,6 +390,8 @@ public:
  *        a destructor to make sure that the update_odometry task never outlives the object
 */
     void set_motors(double FL_motor_power, double FR_motor_power, double BL_motor_power, double BR_motor_power);
+
+    bool collision_detected();
 
     void calibrate_IMU();
 

@@ -140,13 +140,13 @@ void DriveTrain::update_odometry()
 {
     update_odometry_mutex.take(1000);
     double left_encoder_distance = get_left_encoder_distance();
-    double delta_left_encoder_distance = left_encoder_distance - prev_left_encoder_distance;
+    delta_left_encoder_distance = left_encoder_distance - prev_left_encoder_distance;
 
     double right_encoder_distance = get_right_encoder_distance();
-    double delta_right_encoder_distance = right_encoder_distance - prev_right_encoder_distance;
+    delta_right_encoder_distance = right_encoder_distance - prev_right_encoder_distance;
 
     double middle_encoder_distance = get_middle_encoder_distance();
-    double delta_middle_encoder_distance = middle_encoder_distance - prev_middle_encoder_distance;
+    delta_middle_encoder_distance = middle_encoder_distance - prev_middle_encoder_distance;
 
     double delta_alpha = compute_delta_alpha(delta_right_encoder_distance, delta_left_encoder_distance);
     alpha += delta_alpha;
@@ -404,6 +404,11 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
     pros::lcd::set_text(0, "drive_to_point exited");
 }
 
+bool DriveTrain::collision_detected()
+{
+    return (delta_left_encoder_distance == 0 && delta_right_encoder_distance == 0 && delta_middle_encoder_distance == 0);
+}
+
 void DriveTrain::drive_to_tower_backboard(double target_angle)
 {
     //turn to a specified angle
@@ -415,16 +420,20 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
     double prev_time = pros::millis();
     double X_error;
 
-    PID_controller pid_controller_stage1(0.01, 0, 0, 1, 0);
+    PID_controller pid_controller(0.01, 0, 0, 1, 0);
 
     int stage = 1;
 
     do
     {
-        if ((abs(prev_time - pros::millis()) > 2000) && stage == 1)
+        if ((abs(prev_time - pros::millis()) > 500) && collision_detected() && stage == 1)
         {
+            set_motors(-15, 15, -15, 15);
+            pros::delay(20);
+
             point_turn_PID(target_angle, true);
             stage = 2;
+            pid_controller = PID_controller(0.01, 0.0000366666666, 0, 1, 0);
         }
 
         backboard = vision_sensor->get_by_size(0);
@@ -433,7 +442,7 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
         if (backboard.signature != 3)
         {
             pros::delay(20);
-            X_error = 50;
+            X_error = -50;
         }
         else
         {
@@ -448,17 +457,19 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
         const double k_Y = 10;
 
         double T;
+        double S;
 
         if (stage == 1)
         {
             T = atan2(k_Y, X_error);
+            S = pid_controller.compute(abs(X_error)) + 0.3;
         }
-        else
+        if (stage == 2)
         {
             T = atan2(0, X_error);
+            S = pid_controller.compute(abs(X_error));
         }
 
-        double S = pid_controller_stage1.compute(abs(X_error)) + 0.3;
         S = constrain(S, 0.0, 1.0);
 
         pros::lcd::set_text(3, "S: " + std::to_string(S));
@@ -472,8 +483,11 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
         run_Xdrive(T, S, R);
 
         pros::delay(20);
-    } while (!(X_error < .2 && stage == 2));
+    } while (!(abs(X_error) < .2 && stage == 2));
     pros::lcd::set_text(5, "exited: ");
+    set_motors(15, -15, 15, -15);
+    pros::delay(50);
+    point_turn_PID(target_angle, true);
     stop_drive_motors();
 }
 void DriveTrain::point_turn_PID(double target, bool use_IMU, const double Kp, const double Ki, const double Kd)

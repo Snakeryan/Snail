@@ -130,15 +130,15 @@ void run_macros()
 	const int light_sensor_threshold = -500;
 	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
 	{
-		scorer.set_intake(127);
+		scorer.set_intakes(127);
 	}
 	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN))
 	{
-		scorer.set_intake(-63);
+		scorer.set_intakes(-63);
 	}
 	else
 	{
-		scorer.set_intake(0);
+		scorer.set_intakes(0);
 	}
 
 	// If both buttons are pressed and limit switch is detected: stop indexer
@@ -149,21 +149,21 @@ void run_macros()
 	if ((scorer.get_light_calibrated_value() < light_sensor_threshold && controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) && controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
 	{
 		// indexer
-		scorer.set_indexer(0);
+		scorer.set_indexers(0);
 		pros::delay(50);
 	}
 	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
 	{
-		scorer.set_indexer(127);
+		scorer.set_indexers(127);
 	}
 	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B))
 	{
-		scorer.set_indexer(-127);
+		scorer.set_indexers(-127);
 	}
 
 	else
 	{
-		scorer.set_indexer(0);
+		scorer.set_indexers(0);
 	}
 
 	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))

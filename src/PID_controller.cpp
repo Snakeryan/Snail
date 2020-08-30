@@ -1,5 +1,5 @@
 #include "PID_controller.h"
-#include "globals.h"
+#include "main.h"
 
 template <class T>
 const T &constrain(const T &x, const T &a, const T &b)
@@ -90,16 +90,6 @@ void PID_controller::use_crossover_zero()
 void PID_controller::reset_integral()
 {
     integral = 0;
-}
-
-double PID_controller::get_prev_time_since_PID_initialized()
-{
-    return prev_time;
-}
-
-double PID_controller::get_time_since_PID_initialized()
-{
-    return time;
 }
 
 double PID_controller::get_error()

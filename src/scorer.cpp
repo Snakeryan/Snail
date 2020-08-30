@@ -1,6 +1,6 @@
 #include "Scorer.h"
 
-Scorer::Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *indexer, pros::Motor *flywheel, pros::Vision *vision_sensor, pros::vision_signature_s_t *BLUE_BALL_SIGNATURE, pros::vision_signature_s_t *RED_BALL_SIGNATURE, pros::vision_signature_s_t *tower_backboard_signature, pros::ADIDigitalIn *lower_limit_switch, pros::ADIAnalogIn *light_sensor)
+Scorer::Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *indexer, pros::Motor *flywheel, pros::Vision *vision_sensor, pros::vision_signature_s_t *BLUE_BALL_SIGNATURE, pros::vision_signature_s_t *RED_BALL_SIGNATURE, pros::ADIDigitalIn *lower_limit_switch, pros::ADIAnalogIn *light_sensor)
 {
     this->intakeleft = intakeleft;
     this->intakeright = intakeright;
@@ -9,7 +9,6 @@ Scorer::Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *i
     this->vision_sensor = vision_sensor;
     this->BLUE_BALL_SIGNATURE = BLUE_BALL_SIGNATURE;
     this->RED_BALL_SIGNATURE = RED_BALL_SIGNATURE;
-    this->tower_backboard_signature = tower_backboard_signature;
     this->lower_limit_switch = lower_limit_switch;
     this->light_sensor = light_sensor;
 }
@@ -49,23 +48,23 @@ void Scorer::run_upper_light_sensor()
     prev_upper_light_value = get_light_calibrated_value();
 }
 
-void Scorer::manage_indexer_and_flywheel()
+void Scorer::manage_dispensing()
 {
     if (dispense_triggered)
     {
-        set_indexer(-127);
+        set_indexers(-127);
         wait_until_number_of_lower_balls_counted(lower_balls_counted + 1);
-        set_indexer(127);
+        set_indexers(127);
         set_flywheel(-127);
         dispense_triggered = false;
     }
 }
 
-void Scorer::start_indexer_and_flywheel_management_thread()
+void Scorer::start_dispense_management_thread()
 {
     while (true)
     {
-        manage_indexer_and_flywheel();
+        manage_dispensing();
         pros::Task::delay(20);
     }
 }
@@ -90,12 +89,12 @@ void Scorer::start_auton_sensors_update_thread()
 
 void Scorer::make_scorer_threads()
 {
-    flywheel_and_indexer_manager_task = std::make_shared<pros::Task>([this] { start_indexer_and_flywheel_management_thread(); });
+    flywheel_and_indexer_manager_task = std::make_shared<pros::Task>([this] { start_dispense_management_thread(); });
     auton_sensors_task = std::make_shared<pros::Task>([this] { start_auton_sensors_update_thread(); });
     // intake_manager_task = std::make_shared<pros::Task>([this] { start_intake_manager_thread(); });
 }
 
-void Scorer::set_intake(int power)
+void Scorer::set_intakes(int power)
 {
     intakeleft->move_voltage(power * 1000);
     intakeright->move_voltage(power * 1000);
@@ -106,7 +105,7 @@ void Scorer::set_flywheel(int flywheel_power)
     flywheel->move_voltage(flywheel_power * 1000);
 }
 
-void Scorer::set_indexer(int indexer_power)
+void Scorer::set_indexers(int indexer_power)
 {
     indexer->move_voltage(indexer_power * 1000);
 }
@@ -136,37 +135,37 @@ void Scorer::score_in_goal(int num_balls)
 {
     set_flywheel(127);
     pros::delay(100);
-    set_indexer(127);
+    set_indexers(127);
     while (upper_balls_counted < num_balls)
     {
         pros::delay(10);
     }
     pros::delay(250);
     set_flywheel(127);
-    set_indexer(127);
+    set_indexers(127);
 }
 
 void Scorer::score_in_goal_with_light(int num_balls)
 {
     set_flywheel(127);
-    set_indexer(127);
+    set_indexers(127);
 
     while (upper_balls_counted < num_balls)
     {
         if (get_light_calibrated_value() < -500)
         {
-            set_indexer(-100);
+            set_indexers(-100);
             pros::delay(50);
         }
         else
         {
-            set_indexer(127);
+            set_indexers(127);
         }
         pros::delay(10);
     }
     pros::delay(100);
     set_flywheel(0);
-    set_indexer(0);
+    set_indexers(0);
 }
 
 void Scorer::dispense()
@@ -182,18 +181,18 @@ void Scorer::reset_balls_counted()
 
 void Scorer::deploy_intakes()
 {
-    set_intake(127);
+    set_intakes(127);
     pros::delay(1000);
-    set_intake(0);
+    set_intakes(0);
     pros::delay(1000);
-    set_intake(127);
+    set_intakes(127);
 }
 
 void Scorer::stop_motors()
 {
     set_flywheel(0);
-    set_indexer(0);
-    set_intake(0);
+    set_indexers(0);
+    set_intakes(0);
 }
 
 void Scorer::setup()

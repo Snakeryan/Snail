@@ -2,12 +2,11 @@
 #include "Scorer.h"
 #include "globals.h"
 
-
 //object of class DriveTrain:
 DriveTrain drivetrain(1.375, 6.9922569449, 6.9922569449, 5.16732, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM, &vision_sensor, &IMU);
 
 //object of class Scorer:
-Scorer scorer(&intakeleft, &intakeright, &indexer, &flywheel, &vision_sensor, &BLUE_BALL_SIGNATURE, &RED_BALL_SIGNATURE, &tower_backboard_signature, &lower_limit_switch, &light_sensor);
+Scorer scorer(&intakeleft, &intakeright, &indexer, &flywheel, &vision_sensor, &BLUE_BALL_SIGNATURE, &RED_BALL_SIGNATURE, &lower_limit_switch, &light_sensor);
 
 //motors:
 pros::Motor intakeleft(11, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_COUNTS);
@@ -35,8 +34,6 @@ pros::Imu IMU(2);
 pros::Vision vision_sensor(15);
 pros::vision_signature_s_t BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
 pros::vision_signature_s_t RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
-pros::vision_signature_s_t tower_backboard_signature = pros::Vision::signature_from_utility(3, -4417, -3983, -4200, -5243, -4831, -5037, 11.000, 0);
-
 
 pros::ADIDigitalIn lower_limit_switch('C');
 pros::ADIAnalogIn light_sensor('D');
