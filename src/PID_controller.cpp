@@ -25,7 +25,7 @@ PID_controller::PID_controller(double kP, double kI, double kD, double max_outpu
     this->min_output = min_output;
 }
 
-double PID_controller::compute(double new_error, bool use_dt)
+double PID_controller::compute(double new_error, double current_time)
 {
 
     //assigning the new_error to the data member error:
@@ -53,22 +53,19 @@ double PID_controller::compute(double new_error, bool use_dt)
         integral += error;
     }
 
-    //making a time variable:
-    double time = pros::millis(); //have to change pros::millis() to something more versatile
-
     //assigning the derivative value
     derivative = prev_error - error;
 
     //if use_dt time is true, time will be incorporated into derivative and integral
-    if (use_dt)
+    if (current_time != -1)
     {
-        double dt = time - prev_time;
+        double dt = current_time - prev_time;
         derivative /= dt;
         integral *= dt;
     }
 
     //assigning the prev variables
-    prev_time = time;
+    prev_time = current_time;
     prev_error = new_error;
 
     //returning the PID value

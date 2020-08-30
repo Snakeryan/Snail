@@ -249,7 +249,7 @@ void DriveTrain::compute_BR_motor_speed(double P2, double s, double K_constant, 
     BR->move_voltage(BR_speed * 12700 * multiplier);
 }
 
-void DriveTrain::set_turn(int turn)
+void DriveTrain::set_turn(double turn)
 {
     FL->move_voltage(turn * 1000);
     FR->move_voltage(turn * 1000);
@@ -291,7 +291,7 @@ void DriveTrain::run_Xdrive(double T, double S, double R)
     compute_BR_motor_speed(P2, s, 1, R, 2);
 }
 
-void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint, const std::function<void()> &trigger, int trigger_distance, double timeout)
+void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint, const std::function<void()> &trigger, double trigger_distance, double timeout)
 {
     //hyperparameters:
     const double rotational_KP = 2;
@@ -308,7 +308,7 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
     // acceptable distance error:
     double acceptable_distance_error = 0.2;
 
-    if (is_waypoint == true)
+    if (is_waypoint)
     {
         acceptable_distance_error = 1.5;
         slow_down_distance_threshold = 3;
@@ -407,68 +407,33 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
 void DriveTrain::drive_to_tower_backboard(double target_angle)
 {
     //turn to a specified angle
-    drivetrain.point_turn_PID(target_angle, true);
+    point_turn_PID(target_angle, true);
 
-    //move laterally to center of the backboard:
     pros::vision_object_s_t backboard = vision_sensor->get_by_size(0);
-    PID_controller pid_controller(0.01, 0, 0, 1, 0);
-    do
-    {
-        backboard = vision_sensor->get_by_size(0);
-        pros::lcd::set_text(7, "signature: " + std::to_string(backboard.signature));
-
-        if (backboard.signature != 3)
-        {
-            pros::delay(20);
-            FL->move_voltage(0 * 1000);
-            FR->move_voltage(0 * 1000);
-            BR->move_voltage(0 * 1000);
-            BL->move_voltage(0 * 1000);
-            continue;
-        }
-        else
-        {
-            pros::lcd::set_text(5, "area: " + std::to_string(backboard.width * backboard.height));
-            pros::lcd::set_text(6, "vision coordinates: ( " + std::to_string(backboard.x_middle_coord) + ", " + std::to_string(backboard.y_middle_coord) + ")");
-        }
-
-        double distance_error = backboard.x_middle_coord - 210;
-
-        double angle_error = compute_angle_error(target_angle, convert_deg_to_rad(IMU->get_heading()));
-
-        double T = atan2(0, distance_error);
-
-        double S = pid_controller.compute(abs(distance_error));
-        S = constrain(S, 0.0, 1.0);
-
-        pros::lcd::set_text(3, "S: " + std::to_string(S));
-        pros::lcd::set_text(4, std::to_string((int)FL->get_voltage()) + " " + std::to_string((int)FR->get_voltage()) + " " + std::to_string((int)BL->get_voltage()) + " " + std::to_string((int)BR->get_voltage()));
-
-        double arc_length_error = angle_error * wR;
-
-        double R = MIN((arc_length_error * 1) / (15 + abs(distance_error)), 1);
-        R = constrain(R, -1.0, 1.0);
-
-        run_Xdrive(T, S, R);
-
-        pros::delay(20);
-    } while (abs(pid_controller.get_error()) > 0.2);
-    //240, -16
 
     //diving forward to the center of the game tower:
+    double prev_time = pros::millis();
+    double X_error;
+
+    PID_controller pid_controller_stage1(0.01, 0, 0, 1, 0);
+
+    int stage = 1;
+
     do
     {
+        if ((abs(prev_time - pros::millis()) > 2000) && stage == 1)
+        {
+            point_turn_PID(target_angle, true);
+            stage = 2;
+        }
+
         backboard = vision_sensor->get_by_size(0);
         pros::lcd::set_text(7, "signature: " + std::to_string(backboard.signature));
-
+        pros::lcd::set_text(0, "stage: " + std::to_string(stage));
         if (backboard.signature != 3)
         {
             pros::delay(20);
-            FL->move_voltage(0 * 1000);
-            FR->move_voltage(0 * 1000);
-            BR->move_voltage(0 * 1000);
-            BL->move_voltage(0 * 1000);
-            continue;
+            X_error = 50;
         }
         else
         {
@@ -476,13 +441,24 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
             pros::lcd::set_text(6, "vision coordinates: ( " + std::to_string(backboard.x_middle_coord) + ", " + std::to_string(backboard.y_middle_coord) + ")");
         }
 
-        double distance_error = backboard.x_middle_coord - 240;
+        X_error = backboard.x_middle_coord - 240;
 
         double angle_error = compute_angle_error(target_angle, convert_deg_to_rad(IMU->get_heading()));
 
-        double T = atan2(10, distance_error);
+        const double k_Y = 10;
 
-        double S = pid_controller.compute(abs(distance_error));
+        double T;
+
+        if (stage == 1)
+        {
+            T = atan2(k_Y, X_error);
+        }
+        else
+        {
+            T = atan2(0, X_error);
+        }
+
+        double S = pid_controller_stage1.compute(abs(X_error)) + 0.3;
         S = constrain(S, 0.0, 1.0);
 
         pros::lcd::set_text(3, "S: " + std::to_string(S));
@@ -490,110 +466,16 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
 
         double arc_length_error = angle_error * wR;
 
-        double R = MIN((arc_length_error * 1) / (15 + abs(distance_error)), 1);
+        double R = MIN((arc_length_error * 1) / (15 + abs(X_error)), 1);
         R = constrain(R, -1.0, 1.0);
 
         run_Xdrive(T, S, R);
 
         pros::delay(20);
-    } while (abs(pid_controller.get_error()) > 0.2);
+    } while (!(X_error < .2 && stage == 2));
+    pros::lcd::set_text(5, "exited: ");
+    stop_drive_motors();
 }
-void DriveTrain::set_translational_backboard_speed(double translational_speed)
-{
-    if (translational_speed < 0)
-    {
-        FL->move_voltage(-translational_speed * 1000);
-        FR->move_voltage(-translational_speed * 1000);
-        BR->move_voltage(translational_speed * 1000);
-        BL->move_voltage(translational_speed * 1000);
-    }
-    if (translational_speed > 0)
-    {
-        FL->move_voltage(translational_speed * 1000);
-        FR->move_voltage(translational_speed * 1000);
-        BR->move_voltage(-translational_speed * 1000);
-        BL->move_voltage(-translational_speed * 1000);
-    }
-}
-
-// void DriveTrain::drive_to_tower_backboard(double IMU_angle_to_turn)
-// {
-//     double error_in_coordinates, difference_in_coordinates, accumulated_error, previous_error_in_coordinates = 0;
-//     pros::vision_object_s_t backboard;
-//     do
-//     {
-//         backboard = vision_sensor.get_by_size(0);
-//         double X = backboard.x_middle_coord;
-//         drivetrain.point_turn_PID(IMU_angle_to_turn, 40, .7, -43, true);
-
-//         error_in_coordinates = 255 - X;
-//         difference_in_coordinates = previous_error_in_coordinates - error_in_coordinates;
-//         if (abs(error_in_coordinates) < 20)
-//         {
-//             accumulated_error += error_in_coordinates;
-//         }
-//         else
-//         {
-//             accumulated_error = 0;
-//         }
-
-//         if ((previous_error_in_coordinates < 0 && error_in_coordinates > 0) || (error_in_coordinates < 0 && previous_error_in_coordinates > 0))
-//             accumulated_error = 0;
-
-//         set_translational_backboard_speed(error_in_coordinates * 1 + accumulated_error * 0.001 + difference_in_coordinates);
-
-//         previous_error_in_coordinates = error_in_coordinates;
-//     } while ((abs(difference_in_coordinates) > 0.0001) || abs(error_in_coordinates) > 0.01);
-// }
-
-void set_translational_backboard_speed(double speed_to_translate);
-
-// void DriveTrain::point_turn_PID(double target, const double Kp, const double Ki, const double Kd, bool use_IMU)
-// {
-//     double error, derivative, integral, change_time, previous_time, previous_error;
-//     do
-//     {
-//         if (use_IMU)
-//         {
-//             error = compute_angle_error(target, convert_deg_to_rad(IMU.get_heading()));
-//         }
-//         else
-//         {
-//             error = compute_angle_error(target, get_constrained_alpha());
-//         }
-
-//         derivative = (previous_error - error);
-
-//         if (abs(error) < 0.349066) // 20 degrees
-//         {
-//             integral += error;
-//         }
-//         else
-//         {
-//             integral = 0;
-//         }
-
-//         if ((previous_error < 0 && error > 0) || (error < 0 && previous_error > 0))
-//             integral = 0;
-
-//         set_turn(error * Kp + integral * Ki + derivative * Kd);
-
-//         // pros::lcd::set_text(6, "the error is: " + std::to_string(error * 180 / pi));
-//         // pros::lcd::set_text(7, "the target is: " + std::to_string(convert_rad_to_deg_wraped(target)));
-//         // pros::lcd::set_text(4, "the derivative is: " + std::to_string(derivative));
-//         // pros::lcd::set_text(3, "the integral is: " + std::to_string(accumulated_error));
-//         // pros::lcd::set_text(5, "PID value is: " + std::to_string(error * Kp + integral * Ki + derivative * Kd));
-//         // pros::lcd::set_text(2, "alpha is: " + std::to_string(get_alpha_in_degrees()));
-
-//         previous_error = error;
-
-//         pros::delay(20);
-
-//     } while (((abs(derivative) > 0.0001) || abs(error) > 0.01));
-
-//     pros::lcd::set_text(0, "pid escaped");
-// }
-
 void DriveTrain::point_turn_PID(double target, bool use_IMU, const double Kp, const double Ki, const double Kd)
 {
     PID_controller pid_controller(Kp, Ki, Kd, 127, -127);
@@ -611,7 +493,7 @@ void DriveTrain::point_turn_PID(double target, bool use_IMU, const double Kp, co
             angle_error = compute_angle_error(convert_deg_to_rad(target), get_constrained_alpha());
         }
         angle_error = compute_angle_error(convert_deg_to_rad(target), get_constrained_alpha());
-        double motor_power = pid_controller.compute(angle_error, false);
+        double motor_power = pid_controller.compute(angle_error);
 
         set_turn(motor_power);
         pros::lcd::set_text(4, "the angle error is: " + std::to_string(angle_error * 180 / pi));
@@ -660,7 +542,7 @@ double DriveTrain::get_globalY()
     return globalY;
 }
 
-void DriveTrain::set_motors(int FL_motor_power, int FR_motor_power, int BL_motor_power, int BR_motor_power)
+void DriveTrain::set_motors(double FL_motor_power, double FR_motor_power, double BL_motor_power, double BR_motor_power)
 {
     FL->move_voltage(FL_motor_power * 1000);
     FR->move_voltage(FR_motor_power * 1000);

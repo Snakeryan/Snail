@@ -10,7 +10,7 @@ class PID_controller
 public:
     PID_controller(double kP, double kI, double kD, double max_output, double min_output);
 
-    double compute(double newError, bool use_dt = false);
+    double compute(double newError, double current_time = -1);
 
     void use_integrater_error_bound(double integral_error_limit);
 

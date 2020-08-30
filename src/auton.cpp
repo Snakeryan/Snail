@@ -16,10 +16,9 @@ void test_mode()
 void run_skills()
 {
     drivetrain.set_current_global_position(0, 0, 0);
-    // test_mode();
-    // drivetrain.stop_drive_motors();
-    // return;
-    // deploy_intakes();
+    test_mode();
+    drivetrain.stop_drive_motors();
+    return;
     scorer.set_intake(127);
     drivetrain.drive_to_point(0, 13.72, 0, false, true);
     drivetrain.drive_to_point(20.10, 6.70, 135.5, false, false, NULL, 0, 3000);

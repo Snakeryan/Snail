@@ -10,9 +10,11 @@ void display_data()
 	{
 		pros::lcd::set_text(1, "(X, Y): (" + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")");
 		pros::lcd::set_text(2, "alpha: " + std::to_string(drivetrain.get_alpha_in_degrees()));
-		pros::lcd::set_text(4, std::to_string((int)indexer.get_temperature()) + "; " + std::to_string((int)flywheel.get_temperature()));
 		pros::lcd::set_text(3, std::to_string((int)FL.get_temperature()) + "; " + std::to_string((int)FR.get_temperature()) + "; " + std::to_string((int)BL.get_temperature()) + "; " + std::to_string((int)BR.get_temperature()));
-		pros::lcd::set_text(2, "alpha with imu: " + std::to_string(IMU.get_heading()));
+		pros::lcd::set_text(4, std::to_string((int)indexer.get_temperature()) + "; " + std::to_string((int)flywheel.get_temperature()));
+		//5
+		//6
+		pros::lcd::set_text(0, "alpha with imu: " + std::to_string(IMU.get_heading()));
 		pros::Task::delay(20);
 	}
 }
@@ -61,7 +63,8 @@ void initialize()
 
 	scorer.setup();
 	drivetrain.setup();
-	pros::Task display_data_task(display_data);
+
+	// pros::Task display_data_task(display_data);
 	pros::lcd::initialize();
 	pros::lcd::register_btn1_cb(on_center_button);
 	display_auton_mode();

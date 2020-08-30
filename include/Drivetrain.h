@@ -18,10 +18,10 @@ class DriveTrain
     // all data members of the DriveTrain class:
     double encoder_wheel_radius, wL, wR, wM, globalX, globalY, alpha, prev_alpha, prev_left_encoder_distance, prev_right_encoder_distance, prev_middle_encoder_distance;
 
-    //shared pointer to ensure that the update_odometry task(s) will never outlive your function
+    //shared pointer to ensure that the update_odometry task(s) will never outlive the function
     std::shared_ptr<pros::Task> odometry_update_task{nullptr};
 
-    // pointers to allow for your motor/sensor parameters to be accessed:
+    // motor/sensor parameters:
     pros::Motor *FL;
     pros::Motor *FR;
     pros::Motor *BL;
@@ -251,7 +251,7 @@ class DriveTrain
  * \param turn
  *        the speed at which you want the robot to turn (12 is the maximum speed)
 */
-    void set_turn(int turn);
+    void set_turn(double turn);
 
     /**
  * \param turn
@@ -291,7 +291,7 @@ public:
  * \param timeout
  *       the maximum amount of time the robot can spend driving to a point (has default of 10000 milliseconds`)
 */
-    void drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint, const std::function<void()> &trigger = 0, int trigger_distance = 3, double timeout = 10000);
+    void drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint, const std::function<void()> &trigger = 0, double trigger_distance = 3, double timeout = 10000);
 
     /** 
  *        this method changes where the robot thinks it is with respect to its coordinates and heading (only use this if you are starting in a new position)
@@ -361,8 +361,6 @@ public:
 */
     double get_middle_encoder_distance();
 
-    void set_translational_backboard_speed(double translational_speed);
-
     void drive_to_tower_backboard(double IMU_angle_to_turn);
 
     /** 
@@ -392,7 +390,7 @@ public:
     /** 
  *        a destructor to make sure that the update_odometry task never outlives the object
 */
-    void set_motors(int FL_motor_power, int FR_motor_power, int BL_motor_power, int BR_motor_power);
+    void set_motors(double FL_motor_power, double FR_motor_power, double BL_motor_power, double BR_motor_power);
 
     void calibrate_IMU();
 
