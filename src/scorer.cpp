@@ -7,8 +7,8 @@ Scorer::Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *i
     this->indexer = indexer;
     this->flywheel = flywheel;
     this->vision_sensor = vision_sensor;
-    this->BLUE_BALL_SIGNATURE = BLUE_BALL_SIGNATURE;
-    this->RED_BALL_SIGNATURE = RED_BALL_SIGNATURE;
+    // this->BLUE_BALL_SIGNATURE = BLUE_BALL_SIGNATURE;
+    // this->RED_BALL_SIGNATURE = RED_BALL_SIGNATURE;
     this->lower_limit_switch = lower_limit_switch;
     this->light_sensor = light_sensor;
 }

@@ -433,7 +433,7 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
 
             point_turn_PID(target_angle, true);
             stage = 2;
-            pid_controller = PID_controller(0.01, 0.0000366666666, 0, 1, 0);
+            pid_controller = PID_controller(0.015, 0.00017, 0, 1, 0); // integral: 0.0001966666666
         }
 
         backboard = vision_sensor->get_by_size(0);
@@ -454,7 +454,7 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
 
         double angle_error = compute_angle_error(target_angle, convert_deg_to_rad(IMU->get_heading()));
 
-        const double k_Y = 10;
+        const double k_Y = 20;
 
         double T;
         double S;
@@ -597,8 +597,8 @@ void DriveTrain::setup_sensors()
     RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
     tower_backboard_signature = pros::Vision::signature_from_utility(3, -4417, -3983, -4200, -5243, -4831, -5037, 11.000, 0);
 
-    vision_sensor->set_signature(1, &BLUE_BALL_SIGNATURE);
-    vision_sensor->set_signature(2, &RED_BALL_SIGNATURE);
+    // vision_sensor->set_signature(1, &BLUE_BALL_SIGNATURE);
+    // vision_sensor->set_signature(2, &RED_BALL_SIGNATURE);
     vision_sensor->set_signature(3, &tower_backboard_signature);
 }
 
