@@ -8,6 +8,8 @@
 /******************************************************************************/
 #include <pthread.h>
 #include <memory>
+#include "main.h"
+#include "SimpleKalmanFilter.h"
 
 class DriveTrain
 {

@@ -48,7 +48,7 @@ void Scorer::run_upper_light_sensor()
     prev_upper_light_value = get_light_calibrated_value();
 }
 
-void Scorer::manage_dispensing()
+void Scorer::manage_indexer_and_flywheel()
 {
     if (dispense_triggered)
     {
@@ -58,13 +58,24 @@ void Scorer::manage_dispensing()
         set_flywheel(-127);
         dispense_triggered = false;
     }
+
+    if (num_balls_to_score != 0)
+    {
+        score_in_goal_with_light(num_balls_to_score);
+        num_balls_to_score = 0;
+    }
+
+    if(num_balls_to_collect != 0 && !dispense_triggered)
+    {
+        set_indexers(127);
+    }
 }
 
-void Scorer::start_dispense_management_thread()
+void Scorer::start_indexer_and_flywheel_management_thread()
 {
     while (true)
     {
-        manage_dispensing();
+        manage_indexer_and_flywheel();
         pros::Task::delay(20);
     }
 }
@@ -78,20 +89,35 @@ void Scorer::start_auton_sensors_update_thread()
         pros::Task::delay(20);
     }
 }
-// void Scorer::start_intake_manager_thread()
-// {
-//     while (true)
-//     {
-//         //TODO Later
-//         pros::Task::delay(50);
-//     }
-// }
+
+void Scorer::manage_intakes()
+{
+    if (num_balls_to_collect != 0)
+    {
+        set_intakes(127);
+        wait_until_number_of_lower_balls_counted(num_balls_to_collect);
+        pros::delay(50);
+        set_intakes(-63);
+        pros::delay(100);
+        set_intakes(0);
+        num_balls_to_collect = 0;
+    }
+}
+
+void Scorer::start_intake_manager_thread()
+{
+    while (true)
+    {
+        manage_intakes();
+        pros::Task::delay(40);
+    }
+}
 
 void Scorer::make_scorer_threads()
 {
-    flywheel_and_indexer_manager_task = std::make_shared<pros::Task>([this] { start_dispense_management_thread(); });
+    flywheel_and_indexer_manager_task = std::make_shared<pros::Task>([this] { start_indexer_and_flywheel_management_thread(); });
     auton_sensors_task = std::make_shared<pros::Task>([this] { start_auton_sensors_update_thread(); });
-    // intake_manager_task = std::make_shared<pros::Task>([this] { start_intake_manager_thread(); });
+    intake_manager_task = std::make_shared<pros::Task>([this] { start_intake_manager_thread(); });
 }
 
 void Scorer::set_intakes(int power)
@@ -112,7 +138,7 @@ void Scorer::set_indexers(int indexer_power)
 
 double Scorer::get_light_calibrated_value()
 {
-    return light_sensor->get_value() - light_sensor_calibrated_value;
+    return light_sensor->get_value_calibrated();
 }
 
 void Scorer::wait_until_number_of_uppper_balls_counted(int number_of_balls_passed)
@@ -131,19 +157,6 @@ void Scorer::wait_until_number_of_lower_balls_counted(int number_of_balls_passed
     }
 }
 
-void Scorer::score_in_goal(int num_balls)
-{
-    set_flywheel(127);
-    pros::delay(100);
-    set_indexers(127);
-    while (upper_balls_counted < num_balls)
-    {
-        pros::delay(10);
-    }
-    pros::delay(250);
-    set_flywheel(127);
-    set_indexers(127);
-}
 
 void Scorer::score_in_goal_with_light(int num_balls)
 {
@@ -163,7 +176,7 @@ void Scorer::score_in_goal_with_light(int num_balls)
         }
         pros::delay(10);
     }
-    pros::delay(100);
+    pros::delay(150);
     set_flywheel(0);
     set_indexers(0);
 }
@@ -197,8 +210,28 @@ void Scorer::stop_motors()
 
 void Scorer::setup()
 {
-    light_sensor_calibrated_value = light_sensor->calibrate();
+    light_sensor->calibrate();
     make_scorer_threads();
+}
+
+void Scorer::score_n_balls(double num_balls_to_score)
+{
+    this->num_balls_to_score = num_balls_to_score;
+}
+
+void Scorer::collect_n_balls(double num_balls_to_collect)
+{
+    this->num_balls_to_collect = num_balls_to_collect;
+}
+
+double Scorer::get_lower_balls_counted()
+{
+    return lower_balls_counted;
+}
+
+double Scorer::get_upper_balls_counted()
+{
+    return upper_balls_counted;
 }
 
 Scorer::~Scorer()
@@ -211,8 +244,8 @@ Scorer::~Scorer()
     {
         auton_sensors_task->remove();
     }
-    // if (intake_manager_task.get() != nullptr)
-    // {
-    //     intake_manager_task->remove();
-    // }
+    if (intake_manager_task.get() != nullptr)
+    {
+        intake_manager_task->remove();
+    }
 }

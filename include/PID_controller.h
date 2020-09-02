@@ -19,7 +19,7 @@ public:
  *        constant value that derivative control is multiplied by
  * \param max_output
  *        the maximum value that the PID value can output
- * \param max_output
+ * \param min_output
  *        the minumum value that the PID value can output
 */
     PID_controller(double kP, double kI, double kD, double max_output, double min_output);

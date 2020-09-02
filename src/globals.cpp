@@ -2,6 +2,8 @@
 #include "Scorer.h"
 #include "globals.h"
 
+bool is_disabled;
+
 //object of class DriveTrain:
 DriveTrain drivetrain(1.375, 6.9922569449, 6.9922569449, 5.16732, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM, &vision_sensor, &IMU);
 

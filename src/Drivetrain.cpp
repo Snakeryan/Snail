@@ -185,7 +185,7 @@ void DriveTrain::turn_to_point(double destX, double destY)
         angle += TAU;
     }
     pros::lcd::set_text(0, "the angle to turn is: " + std::to_string(convert_rad_to_deg_wraped(angle)));
-    point_turn_PID(angle, 30, .7, -60);
+    point_turn_PID(angle);
 }
 
 /*
@@ -416,74 +416,53 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
 
     pros::vision_object_s_t backboard = vision_sensor->get_by_size(0);
 
-    //diving forward to the center of the game tower:
+    //driving forward to the center of the game tower:
     double prev_time = pros::millis();
     double X_error;
 
-    PID_controller pid_controller(0.01, 0, 0, 1, 0);
+    PID_controller pid_controller(0.016, 0.000017, 0, 1, 0);//0.000067
 
-    int stage = 1;
-
+    pid_controller.use_crossover_zero();
+    pid_controller.use_integrater_error_bound(3);
+    double S;
+    SimpleKalmanFilter vision_kalman_filter(3, 3, 0.08);
+    const double backboard_X_center = 206;
     do
     {
-        if ((abs(prev_time - pros::millis()) > 500) && collision_detected() && stage == 1)
-        {
-            set_motors(-15, 15, -15, 15);
-            pros::delay(20);
-
-            point_turn_PID(target_angle, true);
-            stage = 2;
-            pid_controller = PID_controller(0.015, 0.00017, 0, 1, 0); // integral: 0.0001966666666
-        }
-
         backboard = vision_sensor->get_by_size(0);
-        pros::lcd::set_text(7, "signature: " + std::to_string(backboard.signature));
-        pros::lcd::set_text(0, "stage: " + std::to_string(stage));
         if (backboard.signature != 3)
         {
             pros::delay(20);
-            X_error = -50;
+            X_error = 50;
         }
         else
         {
+            double filtered_X = vision_kalman_filter.updateEstimate(backboard.x_middle_coord);
             pros::lcd::set_text(5, "area: " + std::to_string(backboard.width * backboard.height));
-            pros::lcd::set_text(6, "vision coordinates: ( " + std::to_string(backboard.x_middle_coord) + ", " + std::to_string(backboard.y_middle_coord) + ")");
+            pros::lcd::set_text(2, "X:" + std::to_string(backboard.x_middle_coord) + "f: " + std::to_string(filtered_X) + ")");
+            X_error = filtered_X - backboard_X_center;
         }
 
-        X_error = backboard.x_middle_coord - 240;
+        double angle_error = compute_angle_error(convert_deg_to_rad(target_angle), convert_deg_to_rad(IMU->get_heading()));
 
-        double angle_error = compute_angle_error(target_angle, convert_deg_to_rad(IMU->get_heading()));
+        double arc_length_error = angle_error * wR;
 
-        const double k_Y = 20;
-
-        double T;
-        double S;
-
-        if (stage == 1)
-        {
-            T = atan2(k_Y, X_error);
-            S = pid_controller.compute(abs(X_error)) + 0.3;
-        }
-        if (stage == 2)
-        {
-            T = atan2(0, X_error);
-            S = pid_controller.compute(abs(X_error));
-        }
+        double T = atan2(0, X_error);
+        S = pid_controller.compute(abs(X_error));
+        double R = MIN((arc_length_error * 2) / (15 + abs(X_error)), 1);
 
         S = constrain(S, 0.0, 1.0);
 
         pros::lcd::set_text(3, "S: " + std::to_string(S));
         pros::lcd::set_text(4, std::to_string((int)FL->get_voltage()) + " " + std::to_string((int)FR->get_voltage()) + " " + std::to_string((int)BL->get_voltage()) + " " + std::to_string((int)BR->get_voltage()));
 
-        double arc_length_error = angle_error * wR;
-
-        double R = MIN((arc_length_error * 1) / (15 + abs(X_error)), 1);
         R = constrain(R, -1.0, 1.0);
 
         run_Xdrive(T, S, R);
 
         pros::delay(20);
-    } while (!(abs(X_error) < .2 && stage == 2));
+    } while (!((abs(X_error) < 0.1) && S < 0.005));
+
     pros::lcd::set_text(5, "exited: ");
     set_motors(15, -15, 15, -15);
     pros::delay(50);
@@ -570,10 +549,11 @@ void DriveTrain::stop_drive_motors()
 
 void DriveTrain::driver_control(double Yaxis, double Xaxis, double turn)
 {
-    double FL_power = Yaxis + Xaxis + (turn);
-    double FR_power = -Yaxis + Xaxis + (turn);
-    double BL_power = Yaxis - Xaxis + (turn);
-    double BR_power = -Yaxis - Xaxis + (turn);
+
+    double FL_power = Yaxis + Xaxis + (turn / 2);
+    double FR_power = -Yaxis + Xaxis + (turn / 2);
+    double BL_power = Yaxis - Xaxis + (turn / 2);
+    double BR_power = -Yaxis - Xaxis + (turn / 2);
 
     set_motors(FL_power, FR_power, BL_power, BR_power);
 }
@@ -589,13 +569,17 @@ void DriveTrain::calibrate_IMU()
     }
 }
 
+void filter_IMU()
+{
+}
+
 void DriveTrain::setup_sensors()
 {
     calibrate_IMU();
 
     BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
     RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
-    tower_backboard_signature = pros::Vision::signature_from_utility(3, -4417, -3983, -4200, -5243, -4831, -5037, 11.000, 0);
+    tower_backboard_signature = pros::Vision::signature_from_utility(3, -4013, -3667, -3840, -5007, -4469, -4738, 11.000, 0);
 
     // vision_sensor->set_signature(1, &BLUE_BALL_SIGNATURE);
     // vision_sensor->set_signature(2, &RED_BALL_SIGNATURE);

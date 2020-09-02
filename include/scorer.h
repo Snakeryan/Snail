@@ -14,10 +14,10 @@ class Scorer
     int lower_balls_counted, upper_balls_counted = 0;
 
     //calibrated value of the light sensor:
-    double light_sensor_calibrated_value, prev_upper_light_value, prev_lower_limit_value, upper_prev_time, lower_prev_time = 0;
+    double prev_upper_light_value, prev_lower_limit_value, upper_prev_time, lower_prev_time, num_balls_to_score, num_balls_to_collect = 0;
 
     //flag for dispensing
-    bool dispense_triggered = false;
+    bool dispense_triggered;
 
     //pointer objects of all of the motors that are not part of the drivetrain:
     pros::Motor *intakeleft;
@@ -36,6 +36,7 @@ class Scorer
     pros::ADIDigitalIn *lower_limit_switch;
     pros::ADIAnalogIn *light_sensor;
 
+    void manage_intakes();
     /**
  *        makes a lower ball counter with a limit switch (use this to know how many balls have entered the robot)
 */
@@ -54,17 +55,24 @@ class Scorer
     /**
  *        will dispence balls when a flag is activated
 */
-    void manage_dispensing();
+    void manage_indexer_and_flywheel();
 
     /**
- *        puts manage_dispensing() in a while true loop with a small task delay 
+ *        puts manage_indexer_and_flywheel() in a while true loop with a small task delay 
 */
-    void start_dispense_management_thread();
+    void start_indexer_and_flywheel_management_thread();
 
     /**
  *        puts manage_indexer() in a while true loop with a small task delay 
 */
     void start_intake_manager_thread();
+
+    /**
+ *        scores a specified amount of balls using the upper ball counter and the light sensor to ensure that balls do not collide with each other (turns indexers off when the light sensor is detected)
+ * \param num_balls
+ *        how many balls to shoot
+*/
+    void score_in_goal_with_light(int num_balls);
 
 public:
     /** 
@@ -101,6 +109,7 @@ public:
 */
     void set_intakes(int intake_power);
 
+    void score_n_balls(double n_balls = 0);
     /**
  *        sets the flywheel's speed
  * \param flywheel_power
@@ -142,20 +151,6 @@ public:
     void wait_until_number_of_lower_balls_counted(int number_of_balls_passed);
 
     /**
- *        scores a specified amount of balls using the upper ball counter
- * \param num_balls
- *        how many balls to shoot
-*/
-    void score_in_goal(int num_balls);
-
-    /**
- *        scores a specified amount of balls using the upper ball counter and the light sensor to ensure that balls do not collide with each other (turns indexers off when the light sensor is detected)
- * \param num_balls
- *        how many balls to shoot
-*/
-    void score_in_goal_with_light(int num_balls);
-
-    /**
  *        activates the dispensing flag (will automatically be turned off) and dispenses the balls within the robot
 */
     void dispense();
@@ -164,6 +159,12 @@ public:
  *        resets the lower and upper balls counted
 */
     void reset_balls_counted();
+
+    void collect_n_balls(double num_balls_to_collect);
+
+    double get_lower_balls_counted();
+
+    double get_upper_balls_counted();
 
     void stop_motors();
 

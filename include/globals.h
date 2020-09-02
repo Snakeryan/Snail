@@ -4,6 +4,9 @@
 #include "main.h"
 #include "Drivetrain.h"
 
+//flag for inizializing different LCD screens
+extern bool is_disabled;
+
 //namespace to allow for cycling through different autonmous modes
 namespace auton_modes
 {
