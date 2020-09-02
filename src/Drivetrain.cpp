@@ -420,10 +420,10 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
     double prev_time = pros::millis();
     double X_error;
 
-    PID_controller pid_controller(0.016, 0.000017, 0, 1, 0);//0.000067
+    PID_controller pid_controller(0.018, 0.00012, -0.036, 1, 0); //0.000097
 
     pid_controller.use_crossover_zero();
-    pid_controller.use_integrater_error_bound(3);
+    pid_controller.use_integrater_error_bound(5);
     double S;
     SimpleKalmanFilter vision_kalman_filter(3, 3, 0.08);
     const double backboard_X_center = 206;
@@ -438,7 +438,7 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
         else
         {
             double filtered_X = vision_kalman_filter.updateEstimate(backboard.x_middle_coord);
-            pros::lcd::set_text(5, "area: " + std::to_string(backboard.width * backboard.height));
+            pros::lcd::set_text(5, "average error: " + std::to_string(pid_controller.get_error_average(10)));
             pros::lcd::set_text(2, "X:" + std::to_string(backboard.x_middle_coord) + "f: " + std::to_string(filtered_X) + ")");
             X_error = filtered_X - backboard_X_center;
         }
@@ -459,11 +459,10 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
         R = constrain(R, -1.0, 1.0);
 
         run_Xdrive(T, S, R);
-
         pros::delay(20);
-    } while (!((abs(X_error) < 0.1) && S < 0.005));
+    } while (!((abs(X_error) < 0.6) && S < 0.1 && pid_controller.get_error_average(10) < 0.8));
 
-    pros::lcd::set_text(5, "exited: ");
+    pros::lcd::set_text(7, "exited: ");
     set_motors(15, -15, 15, -15);
     pros::delay(50);
     point_turn_PID(target_angle, true);

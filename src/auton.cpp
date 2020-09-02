@@ -2,6 +2,7 @@
 #include "auton.h"
 #include "Drivetrain.h"
 #include "globals.h"
+#include "PID_controller.h"
 
 void run_homerow()
 {
@@ -9,9 +10,10 @@ void run_homerow()
 
 void test_mode()
 {
-    // drivetrain.drive_to_point(0, 10, 0, false, false, NULL, 0, 1000);
+    drivetrain.drive_to_point(0, 10, 0, false, false, NULL, 0, 1000);
     drivetrain.drive_to_tower_backboard(0);
     drivetrain.stop_drive_motors();
+    // pros::lcd::set_text(5, "average error: " + std::to_string(pid_controller.get_error_average(5)));
 }
 
 void run_skills()

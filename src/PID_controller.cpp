@@ -23,6 +23,10 @@ PID_controller::PID_controller(double kP, double kI, double kD, double max_outpu
     this->kI = kI;
     this->max_output = max_output;
     this->min_output = min_output;
+    for (int i = 0; i < errors_size - 1; i++)
+    {
+        errors[i] = 0;
+    }
 }
 
 double PID_controller::compute(double new_error, double current_time)
@@ -66,8 +70,15 @@ double PID_controller::compute(double new_error, double current_time)
 
     //assigning the prev variables
     prev_time = current_time;
-    prev_error = new_error;
+    prev_error = error;
 
+    //making an error averager
+
+    for (int i = errors_size - 1; i > 0; i--)
+    {
+        errors[i] = errors[i - 1];
+    }
+    errors[0] = error;
     //returning the PID value
     double PID_value = error * kP + integral * kI + derivative * kD;
 
@@ -105,4 +116,15 @@ double PID_controller::get_integral()
 double PID_controller::get_derivative()
 {
     return derivative;
+}
+
+double PID_controller::get_error_average(int errors_to_average)
+{
+    double error_sum = 0;
+    for (int i = 0; i < errors_to_average; i++)
+    {
+        error_sum += errors[i];
+    }
+    pros::lcd::set_text(4, "sum: " + std::to_string(error_sum) + " 0: " + std::to_string((int)errors[0]) + " 1: " + std::to_string((int)errors[1]) + " 2: " + std::to_string((int)errors[2]));
+    return error_sum / errors_to_average;
 }

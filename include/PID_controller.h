@@ -5,6 +5,8 @@ class PID_controller
 {
     double error, kP, integral, kI, derivative, kD, max_output, min_output, prev_error, prev_time, time, integral_error_limit = 0;
 
+    double errors[20];
+    const int errors_size = 20;
     //flags:
     bool use_crossover, use_bounded_error = false;
 
@@ -68,6 +70,8 @@ public:
  *        the current derivative value
 */
     double get_derivative();
+
+    double get_error_average(int errors_to_average);
 };
 
 #endif
