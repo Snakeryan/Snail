@@ -449,7 +449,7 @@ void DriveTrain::drive_to_tower_backboard(double target_angle, bool use_IMU)
 
         double arc_length_error = angle_error * wR;
 
-        double T = atan2(0, X_error);
+        double T = atan2(.05, X_error);
         S = pid_controller.compute(abs(X_error));
         double R = MIN((arc_length_error * 2) / (15 + abs(X_error)), 1);
 
@@ -462,10 +462,11 @@ void DriveTrain::drive_to_tower_backboard(double target_angle, bool use_IMU)
 
         run_Xdrive(T, S, R);
         pros::delay(20);
-    } while (!((abs(X_error) < 0.6) && S < 0.1 && pid_controller.get_error_average(10) < 0.8));
+        printf("%d,%f,%d\n", pros::millis(), X_error, 0);
+    } while (!((abs(X_error) < 0.6) && S < 0.1 && pid_controller.get_error_average(10) < 0.6));
 
-    pros::lcd::set_text(7, "exited: ");
-    set_motors(15, -15, 15, -15);
+    pros::lcd::set_text(7, "exited");
+    // set_motors(15, -15, 15, -15);
     pros::delay(50);
     // point_turn_PID(target_angle);
     stop_drive_motors();

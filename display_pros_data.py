@@ -1,4 +1,5 @@
 import random
+import numpy as np
 from itertools import count
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,9 +12,6 @@ y_vals = []
 
 index = count()
 
-# import os
-# os.remove("data.csv")
-
 
 def animate(i):
 
@@ -22,14 +20,21 @@ def animate(i):
     a_file.close()
 
     filtered_file = open("filtered.csv", "w")
+    valid_lines = 0
     for line in lines:
         if "," in line:
             filtered_file.write(line)
+            valid_lines = 1
 
+    
     filtered_file.close()
 
-    data = pd.read_csv('filtered.csv')
-    x =  data.iloc[:, 0] 
+    if valid_lines != 1:
+        data = pd.DataFrame(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+    else:
+        data = pd.read_csv('filtered.csv')
+
+    x =  data.iloc[:, 0]
     y1 =  data.iloc[:, 1]
     y2 =  data.iloc[:, 2]
 
@@ -42,7 +47,9 @@ def animate(i):
     plt.tight_layout()
 
 
-ani = FuncAnimation(plt.gcf(), animate, interval=100)
+ani = FuncAnimation(plt.gcf(), animate, interval=1000)
 
 plt.tight_layout()
 plt.show()
+
+print("hi")
