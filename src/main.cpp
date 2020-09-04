@@ -10,19 +10,19 @@
 void display_data()
 {
 	pros::vision_object_s_t backboard = vision_sensor.get_by_size(0);
-	
+
 	while (true)
 	{
 
 		backboard = vision_sensor.get_by_size(0);
-		// pros::lcd::set_text(1, "(X, Y): (" + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")");
+		pros::lcd::set_text(2, "(X, Y): (" + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")");
 		// pros::lcd::set_text(2, "alpha: " + std::to_string(drivetrain.get_alpha_in_degrees()));
 		// pros::lcd::set_text(3, std::to_string((int)FL.get_temperature()) + "; " + std::to_string((int)FR.get_temperature()) + "; " + std::to_string((int)BL.get_temperature()) + "; " + std::to_string((int)BR.get_temperature()));
 		// pros::lcd::set_text(4, std::to_string((int)indexer.get_temperature()) + "; " + std::to_string((int)flywheel.get_temperature()));
 		// pros::lcd::set_text(5, "light: " + std::to_string(scorer.get_light_calibrated_value()));
-		pros::lcd::set_text(6, "upper_balls: " + std::to_string(scorer.get_upper_balls_counted()));
-		pros::lcd::set_text(0, "alpha with imu: " + std::to_string(IMU.get_heading()));
-
+		// pros::lcd::set_text(6, "upper_balls: " + std::to_string(scorer.get_upper_balls_counted()));
+		pros::lcd::set_text(6, "exposure: " + std::to_string(vision_sensor.get_exposure()));
+		pros::lcd::set_text(0, "i: " + std::to_string(IMU.get_heading()) + "a: " + std::to_string(drivetrain.get_alpha_in_degrees()));
 
 		pros::lcd::set_text(1, "vision X coordinate:" + std::to_string(backboard.x_middle_coord));
 
@@ -78,6 +78,8 @@ void initialize()
 	pros::Task display_data_task(display_data);
 	pros::lcd::register_btn1_cb(on_center_button);
 	display_auton_mode();
+	light_sensor.calibrate();
+	drivetrain.calibrate_IMU();
 }
 
 void stop_all_motors()
@@ -107,8 +109,6 @@ void disabled()
  */
 void competition_initialize()
 {
-	light_sensor.calibrate();
-	drivetrain.calibrate_IMU();
 }
 
 /**
@@ -191,6 +191,17 @@ void run_macros()
 	else
 	{
 		scorer.set_flywheel(0);
+	}
+	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B))
+	{
+		printf("drivetrain.drive_to_point(%.2f, %.2f, %.2f, false, true)\n", drivetrain.get_globalX(), drivetrain.get_globalY(), drivetrain.get_alpha_in_degrees());
+		// (4, "drivetrain.drive_to_point( " + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")" + std::to_string(drivetrain.get_alpha_in_degrees()));
+		pros::delay(200);
+	}
+	if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_X))
+	{
+		printf("drivetrain.drive_to_point(%.2f, %.2f, %.2f, false, false)\n", drivetrain.get_globalX(), drivetrain.get_globalY(), drivetrain.get_alpha_in_degrees());
+		pros::delay(200);
 	}
 }
 

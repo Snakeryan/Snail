@@ -409,10 +409,10 @@ bool DriveTrain::collision_detected()
     return (delta_left_encoder_distance == 0 && delta_right_encoder_distance == 0 && delta_middle_encoder_distance == 0);
 }
 
-void DriveTrain::drive_to_tower_backboard(double target_angle)
+void DriveTrain::drive_to_tower_backboard(double target_angle, bool use_IMU)
 {
     //turn to a specified angle
-    point_turn_PID(target_angle, true);
+    point_turn_PID(target_angle, use_IMU);
 
     pros::vision_object_s_t backboard = vision_sensor->get_by_size(0);
 
@@ -443,7 +443,9 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
             X_error = filtered_X - backboard_X_center;
         }
 
-        double angle_error = compute_angle_error(convert_deg_to_rad(target_angle), convert_deg_to_rad(IMU->get_heading()));
+        // double angle_error = compute_angle_error(convert_deg_to_rad(target_angle), convert_deg_to_rad(IMU->get_heading()))
+        ;
+        double angle_error = compute_angle_error(convert_deg_to_rad(target_angle), use_IMU ? convert_deg_to_rad(IMU->get_heading()) : get_constrained_alpha());
 
         double arc_length_error = angle_error * wR;
 
@@ -465,9 +467,10 @@ void DriveTrain::drive_to_tower_backboard(double target_angle)
     pros::lcd::set_text(7, "exited: ");
     set_motors(15, -15, 15, -15);
     pros::delay(50);
-    point_turn_PID(target_angle, true);
+    // point_turn_PID(target_angle);
     stop_drive_motors();
 }
+
 void DriveTrain::point_turn_PID(double target, bool use_IMU, const double Kp, const double Ki, const double Kd)
 {
     PID_controller pid_controller(Kp, Ki, Kd, 127, -127);
@@ -574,14 +577,12 @@ void filter_IMU()
 
 void DriveTrain::setup_sensors()
 {
-    calibrate_IMU();
+    // calibrate_IMU();
 
     BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
     RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
     tower_backboard_signature = pros::Vision::signature_from_utility(3, -4013, -3667, -3840, -5007, -4469, -4738, 11.000, 0);
-
-    // vision_sensor->set_signature(1, &BLUE_BALL_SIGNATURE);
-    // vision_sensor->set_signature(2, &RED_BALL_SIGNATURE);
+    vision_sensor->set_exposure(60);
     vision_sensor->set_signature(3, &tower_backboard_signature);
 }
 
