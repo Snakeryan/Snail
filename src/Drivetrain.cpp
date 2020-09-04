@@ -420,10 +420,10 @@ void DriveTrain::drive_to_tower_backboard(double target_angle, bool use_IMU)
     double prev_time = pros::millis();
     double X_error;
 
-    PID_controller pid_controller(0.018, 0.00012, -0.036, 1, 0); //0.000097
+    PID_controller pid_controller(0.012, 0.0002, 0, 1, 0); //0.000097
 
     pid_controller.use_crossover_zero();
-    pid_controller.use_integrater_error_bound(5);
+    pid_controller.use_integrater_error_bound(7);
     double S;
     SimpleKalmanFilter vision_kalman_filter(3, 3, 0.08);
     const double backboard_X_center = 206;
@@ -449,7 +449,7 @@ void DriveTrain::drive_to_tower_backboard(double target_angle, bool use_IMU)
 
         double arc_length_error = angle_error * wR;
 
-        double T = atan2(.05, X_error);
+        double T = atan2(.5, X_error);
         S = pid_controller.compute(abs(X_error));
         double R = MIN((arc_length_error * 2) / (15 + abs(X_error)), 1);
 
@@ -463,7 +463,7 @@ void DriveTrain::drive_to_tower_backboard(double target_angle, bool use_IMU)
         run_Xdrive(T, S, R);
         pros::delay(20);
         printf("%d,%f,%d\n", pros::millis(), X_error, 0);
-    } while (!((abs(X_error) < 0.6) && S < 0.1 && pid_controller.get_error_average(10) < 0.6));
+    } while (!((abs(X_error) < 0.6) && S < 0.15 && pid_controller.get_error_average(10) < 0.6));
 
     pros::lcd::set_text(7, "exited");
     // set_motors(15, -15, 15, -15);
