@@ -409,7 +409,7 @@ bool DriveTrain::collision_detected()
     return (delta_left_encoder_distance == 0 && delta_right_encoder_distance == 0 && delta_middle_encoder_distance == 0);
 }
 
-void DriveTrain::drive_to_tower_backboard(double target_angle, bool use_IMU)
+void DriveTrain::drive_to_tower_backboard(double target_angle, double when_to_include_integral, bool use_IMU)
 {
     //turn to a specified angle
     point_turn_PID(target_angle, use_IMU);
@@ -423,7 +423,7 @@ void DriveTrain::drive_to_tower_backboard(double target_angle, bool use_IMU)
     PID_controller pid_controller(0.012, 0.0002, 0, 1, 0); //0.000097
 
     pid_controller.use_crossover_zero();
-    pid_controller.use_integrater_error_bound(7);
+    pid_controller.use_integrater_error_bound(when_to_include_integral); //first time == 3, second time == 7, third time == 7
     double S;
     SimpleKalmanFilter vision_kalman_filter(3, 3, 0.08);
     const double backboard_X_center = 206;
@@ -468,7 +468,7 @@ void DriveTrain::drive_to_tower_backboard(double target_angle, bool use_IMU)
     pros::lcd::set_text(7, "exited");
     // set_motors(15, -15, 15, -15);
     pros::delay(50);
-    // point_turn_PID(target_angle);
+    // point_turn_PID(target_angle, use_IMU);
     stop_drive_motors();
 }
 

@@ -10,14 +10,58 @@ void run_homerow()
 
 void test_mode()
 {
-    // scorer.set_intakes(127);
-    // scorer.set_indexers(127);
-    // scorer.set_flywheel(127);
-    drivetrain.drive_to_point(0, 10, 0, false, false, NULL, 0, 1000);
-    drivetrain.drive_to_tower_backboard(0, true);
-    drivetrain.stop_drive_motors();
+    //WAYPOINT to tower five
+    scorer.dispense();
+    scorer.set_intakes(127);
+    drivetrain.drive_to_point(-12.71, -3.57, 270, false, true);
 
-    // pros::lcd::set_text(5, "average error: " + std::to_string(pid_controller.get_error_average(5)));
+    //collect the next balll and score in tower five
+    drivetrain.drive_to_point(-17.97, -3.44, 270, false, true);
+    drivetrain.drive_to_point(-55.51, 0.65, 319.26, false, false, NULL, 0, 2000);
+
+    //drive to next two balls
+
+    drivetrain.drive_to_point(-40.97, -30.49, 266.30, false, true);
+    drivetrain.drive_to_point(-52.68, -29.97, 266.40, false, false);
+
+    drivetrain.drive_to_point(-26.64, -28.61, 209.27, false, true);
+    drivetrain.drive_to_point(-36.62, -38.63, 218.02, false, false, NULL, 0, 2000);
+    drivetrain.drive_to_point(-38.83, -53.43, 269.05, false, true, NULL, 0, 2000);
+
+    //score in tower six
+    drivetrain.drive_to_point(-49.29, -52.91, 267.08, false, false, NULL, 0, 2000);
+    drivetrain.stop_drive_motors();
+    drivetrain.drive_to_tower_backboard(270, 7, true);
+    pros::delay(200);
+    drivetrain.set_current_global_position(0, 0, IMU.get_heading());
+
+    //pick up the next ball
+    drivetrain.drive_to_point(3.13, -24.40, 266.55, false, true);
+    drivetrain.drive_to_point(-1.71, -26.98, 267.04, false, false);
+
+    //WAYPOINT to tower 7
+    drivetrain.drive_to_point(4.79, -37.11, 141.84, false, true);
+
+    //drive to tower 7
+    drivetrain.drive_to_point(-2.74, -56.95, 218.86, false, false);
+
+    //drive to tower 8
+    drivetrain.drive_to_point(50.52, -45.88, 174.74, false, true);
+    drivetrain.drive_to_point(51.46, -51.95, 168.12, false, false, NULL, 0, 2000);
+
+    //reset odometry by using the IMU:
+    drivetrain.drive_to_tower_backboard(180, 4.5, true);
+    pros::delay(200);
+    drivetrain.set_current_global_position(0, 0, IMU.get_heading());
+
+    //collect the next ball
+    drivetrain.drive_to_point(0.16, 7.60, 180, false, true);
+    drivetrain.point_turn_PID(0);
+    drivetrain.drive_to_point(-0.16, 14.94, 0, false, true);
+
+    //drive to tower nine
+    drivetrain.drive_to_point(-.64, 37.76, 0, false, false, NULL, 0, 3000);
+
 }
 
 void run_skills()
@@ -58,17 +102,17 @@ void run_skills()
     drivetrain.drive_to_point(
         -6.72, 40.17, 346.43, false, false); //,[]() { scorer.set_indexers(127); scorer.set_flywheel(0); }, 3);
 
-    drivetrain.drive_to_point(-4.69, 49.64, 338.82, false, false);
+    drivetrain.drive_to_point(-6.06, 47.29, 336.40, false, false);
     drivetrain.drive_to_point(-12.14, 62.60, 359.41, false, false);
+    drivetrain.drive_to_point(-4.42, 62.45, 89.18, false, false);
     drivetrain.stop_drive_motors();
 
     //drive and turn to tower two:
-    drivetrain.point_turn_PID(91.34);
     // scorer.set_indexers(127);
     drivetrain.drive_to_point(
         20, 60.97, 91.34, false, false, NULL, 0, 2000);
     // scorer.set_flywheel(0);
-    drivetrain.drive_to_tower_backboard(90);
+    drivetrain.drive_to_tower_backboard(90, 4.5, false);
     pros::delay(200);
     drivetrain.set_current_global_position(16.077751092179696, 63.107507307056174, drivetrain.get_alpha_in_degrees());
 
@@ -108,11 +152,10 @@ void run_skills()
     scorer.dispense();
 
     //collect the next ball and drive to tower four:
-    drivetrain.drive_to_point(-22.00, 90.62, 250.04, false, false);
+    drivetrain.drive_to_point(-22.15, 88.92, 248.46, false, false);
     drivetrain.drive_to_point(-35.18, 81.66, 264.49, false, true);
     drivetrain.drive_to_point(-36.98, 112.80, 1.24, false, false, NULL, 0, 3000);
     drivetrain.stop_drive_motors();
-
 
     scorer.reset_balls_counted();
 
@@ -121,8 +164,35 @@ void run_skills()
     // scorer.set_indexers(127);
     // set_intake(127);
     // wait_until_number_of_lower_balls_counted(1);
-    scorer.set_intakes(0);
-    drivetrain.drive_to_tower_backboard(0, true);
+
+    //reset global position
+    // scorer.set_intakes(0);
+    drivetrain.drive_to_tower_backboard(0, 7, true);
+    pros::delay(200);
+    drivetrain.set_current_global_position(0, 0, IMU.get_heading());
+
+    //WAYPOINT to tower five
+    scorer.dispense();
+    scorer.set_intakes(127);
+    drivetrain.drive_to_point(-12.71, -3.57, 270, false, true);
+
+    //collect the next balll and score in tower five
+    drivetrain.drive_to_point(-17.97, -3.44, 270, false, true);
+    drivetrain.drive_to_point(-55.51, 0.65, 319.26, false, false, NULL, 0, 2000);
+
+    //drive to next two balls
+
+    drivetrain.drive_to_point(-44.33, -27.82, 266.00, false, true); //NULL, 0, 1000
+    drivetrain.drive_to_point(-50.92, -28.52, 266.40, false, true);
+
+    drivetrain.drive_to_point(-26.64, -28.61, 209.27, false, true);
+    drivetrain.drive_to_point(-36.19, -39.35, 209.37, false, false, NULL, 0, 2000);
+    drivetrain.drive_to_point(-38.83, -53.43, 269.05, false, true, NULL, 0, 2000);
+
+    //score in tower six
+    drivetrain.drive_to_point(-49.29, -52.91, 267.08, false, false, NULL, 0, 2000);
+    drivetrain.stop_drive_motors();
+    drivetrain.drive_to_tower_backboard(270, 7, true);
     pros::delay(200);
     drivetrain.set_current_global_position(0, 0, IMU.get_heading());
 }
