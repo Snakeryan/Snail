@@ -409,6 +409,20 @@ bool DriveTrain::collision_detected()
     return (delta_left_encoder_distance == 0 && delta_right_encoder_distance == 0 && delta_middle_encoder_distance == 0);
 }
 
+void DriveTrain::center_on_tower_with_bumper(double angle, bool use_IMU)
+{
+    point_turn_PID(angle, use_IMU);
+    set_motors(15, -15, 15, -15);
+    pros::delay(200);
+    while(!collision_detected())
+    {
+        set_motors(15, -15, 15, -15);
+        pros::delay(10);
+    }
+    point_turn_PID(angle, use_IMU);
+    stop_drive_motors();
+}
+
 void DriveTrain::drive_to_tower_backboard(double target_angle, double when_to_include_integral, bool use_IMU)
 {
     //turn to a specified angle

@@ -403,6 +403,8 @@ public:
 
     void setup();
 
+    void center_on_tower_with_bumper(double angle, bool use_IMU);
+
     ~DriveTrain();
 };
 
