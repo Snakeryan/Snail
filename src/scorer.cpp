@@ -210,7 +210,6 @@ void Scorer::stop_motors()
 
 void Scorer::setup()
 {
-    light_sensor->calibrate();
     make_scorer_threads();
 }
 

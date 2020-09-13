@@ -39,6 +39,9 @@ class DriveTrain
 
     pros::Imu *IMU;
 
+    pros::ADIAnalogIn *left_pot;
+    pros::ADIAnalogIn *right_pot;
+
     void run_Xdrive(double T, double S, double R);
     /**
  *        this method takes inches as its units and it uses this formula: (delta_left_distance - delta_right_distance) / (wL + wR)
@@ -204,10 +207,6 @@ class DriveTrain
 */
     void update_odometry();
 
-    /** 
- *        this puts the update_odometry function into a while(true) loop with a very small delay of ten miliseconds 
-*/
-    void start_odometry_update_thread();
 
     /**
  *        this is the formula used by this method: (rad * 180)/pi
@@ -274,6 +273,11 @@ class DriveTrain
     void make_odometry_update_thread();
 
 public:
+
+    /** 
+ *        this puts the update_odometry function into a while(true) loop with a very small delay of ten miliseconds 
+*/
+    void start_odometry_update_thread();
     /** 
  *        this method calls all of the motion algorithm functions and allows you to smoothly turn and drive to a point (requires X-drive)
  * \param tX
@@ -330,7 +334,7 @@ public:
  * \param encoderM
  *        the address of the middle encoder
 */
-    DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU);
+    DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot);
 
     /**  
  * \return the heading of the robot in degrees (wrapped from 0-360)
@@ -362,7 +366,7 @@ public:
 */
     double get_middle_encoder_distance();
 
-    void drive_to_tower_backboard(double IMU_angle_to_turn, double when_to_include_integral, bool use_IMU = false);
+    void drive_to_tower_backboard(double IMU_angle_to_turn, double when_to_include_integral, bool use_IMU = false, bool is_bumper_drive = true);
 
     /** 
  *        this method is a PID loop for turning to a specific angle
@@ -394,6 +398,10 @@ public:
     void set_motors(double FL_motor_power, double FR_motor_power, double BL_motor_power, double BR_motor_power);
 
     bool collision_detected();
+
+    bool is_L_pot_bending();
+
+    bool is_R_pot_bending();
 
     void calibrate_IMU();
 

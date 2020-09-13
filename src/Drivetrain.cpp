@@ -19,7 +19,7 @@ const T &constrain(const T &x, const T &a, const T &b)
         return x;
 }
 
-DriveTrain::DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU)
+DriveTrain::DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot)
 {
     this->encoder_wheel_radius = encoder_wheel_radius;
     this->wL = wL;
@@ -34,6 +34,8 @@ DriveTrain::DriveTrain(double encoder_wheel_radius, double wL, double wR, double
     this->encoderM = encoderM;
     this->vision_sensor = vision_sensor;
     this->IMU = IMU;
+    this->left_pot = left_pot;
+    this->right_pot = right_pot;
 }
 
 double DriveTrain::compute_alpha(double right_encoder_distance, double left_encoder_distance)
@@ -409,24 +411,109 @@ bool DriveTrain::collision_detected()
     return (delta_left_encoder_distance == 0 && delta_right_encoder_distance == 0 && delta_middle_encoder_distance == 0);
 }
 
-void DriveTrain::center_on_tower_with_bumper(double angle, bool use_IMU)
+bool DriveTrain::is_L_pot_bending()
 {
-    point_turn_PID(angle, use_IMU);
-    set_motors(15, -15, 15, -15);
-    pros::delay(200);
-    while(!collision_detected())
-    {
-        set_motors(15, -15, 15, -15);
-        pros::delay(10);
-    }
-    point_turn_PID(angle, use_IMU);
-    stop_drive_motors();
+    double L_pot_threshold = 765;
+    double L_pot_error = L_pot_threshold - left_pot->get_value();
+    return abs(L_pot_error) > 20;
 }
 
-void DriveTrain::drive_to_tower_backboard(double target_angle, double when_to_include_integral, bool use_IMU)
+bool DriveTrain::is_R_pot_bending()
+{
+    double R_pot_threshold = 765;
+    double R_pot_error = R_pot_threshold - right_pot->get_value();
+    return abs(R_pot_error) > 30;
+}
+
+void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU)
+{
+    double L_pot_threshold = 765;
+    double R_pot_threshold = 760;
+    double prev_time = pros::millis();
+    PID_controller pot_L_controller(0.005, 0, 0, 1, 0);
+    PID_controller pot_R_controller(0.005, 0, 0, 1, 0);
+    do
+    {
+        double L_pot_error = L_pot_threshold - left_pot->get_value();
+        double R_pot_error = R_pot_threshold - right_pot->get_value();
+
+        bool L_pot_bend_detected = is_L_pot_bending();
+        bool R_pot_bend_detected = is_R_pot_bending();
+
+        double angle_error = compute_angle_error(convert_deg_to_rad(target_angle), use_IMU ? convert_deg_to_rad(IMU->get_heading()) : get_constrained_alpha());
+        double arc_length_error = angle_error * wR;
+
+        //ratio between the rotational and translational errors (tells how much motor power to apply to each):
+        double R;
+        double S;
+        double T;
+
+        if (L_pot_bend_detected)
+        {
+            R = MIN((arc_length_error * 1) / (abs(L_pot_error * 0.01)), 1);
+            S = pot_L_controller.compute(abs(L_pot_error));
+            T = atan2(-10, abs(L_pot_error) * 0.001);
+        }
+        else if (R_pot_bend_detected)
+        {
+            R = MIN((arc_length_error * 1) / (abs(R_pot_error * 0.01)), 1);
+            S = pot_R_controller.compute(abs(R_pot_error));
+            T = atan2(-10, abs(R_pot_error) * -0.001);
+        }
+
+        if(L_pot_bend_detected && R_pot_bend_detected)
+        {
+            R = MIN((arc_length_error * 1) / 30, 1);
+            S = 0.3;
+            T = atan2(-10, ((abs(R_pot_error) / -abs(R_pot_error)) / 2) * -0.001);
+        }
+
+        if (!R_pot_bend_detected && !L_pot_bend_detected)
+        {
+            R = MIN((arc_length_error * 1) / 100, 1);
+            S = 0.3;
+            T = atan2(10, 0);
+        }
+
+
+        R = constrain(R, -1.0, 1.0);
+        S = constrain(S, 0.0, 1.0);
+        pros::lcd::set_text(0, R_pot_bend_detected ? "R_pot is bending" : "R_pot is not bending");
+        pros::lcd::set_text(1, "S: " + std::to_string(S));
+        pros::lcd::set_text(2, "L_PID value: " + std::to_string(abs(pot_L_controller.compute(abs(L_pot_error)))));
+        // pros::lcd::set_text(3, "R: " + std::to_string(abs(R)));
+
+        run_Xdrive(T, S, R);
+        pros::delay(20);
+
+    } while (!collision_detected() || is_R_pot_bending() || is_L_pot_bending() || abs(pros::millis() - prev_time) < 150);
+    stop_drive_motors();
+     pros::lcd::set_text(3, "exited");
+}
+
+void DriveTrain::drive_to_tower_backboard(double target_angle, double when_to_include_integral, bool use_IMU, bool is_bumper_drive)
 {
     //turn to a specified angle
     point_turn_PID(target_angle, use_IMU);
+
+    //set acceptable_error
+    double acceptable_Xerror, acceptable_average_Xerror, acceptable_S, X_center_position, S_increaser;
+    if (is_bumper_drive)
+    {
+        acceptable_Xerror = 2;
+        acceptable_average_Xerror = 2;
+        acceptable_S = 0.5;
+        X_center_position = 214;
+        S_increaser = 0.2;
+    }
+    else
+    {
+        acceptable_Xerror = 0.6;
+        acceptable_average_Xerror = 0.6;
+        acceptable_S = 0.15;
+        X_center_position = 206;
+        S_increaser = 0;
+    }
 
     pros::vision_object_s_t backboard = vision_sensor->get_by_size(0);
 
@@ -440,7 +527,6 @@ void DriveTrain::drive_to_tower_backboard(double target_angle, double when_to_in
     pid_controller.use_integrater_error_bound(when_to_include_integral); //first time == 3, second time == 7, third time == 7
     double S;
     SimpleKalmanFilter vision_kalman_filter(3, 3, 0.08);
-    const double backboard_X_center = 206;
     do
     {
         backboard = vision_sensor->get_by_size(0);
@@ -454,11 +540,10 @@ void DriveTrain::drive_to_tower_backboard(double target_angle, double when_to_in
             double filtered_X = vision_kalman_filter.updateEstimate(backboard.x_middle_coord);
             pros::lcd::set_text(5, "average error: " + std::to_string(pid_controller.get_error_average(10)));
             pros::lcd::set_text(2, "X:" + std::to_string(backboard.x_middle_coord) + "f: " + std::to_string(filtered_X) + ")");
-            X_error = filtered_X - backboard_X_center;
+            X_error = filtered_X - X_center_position;
         }
 
         // double angle_error = compute_angle_error(convert_deg_to_rad(target_angle), convert_deg_to_rad(IMU->get_heading()))
-        ;
         double angle_error = compute_angle_error(convert_deg_to_rad(target_angle), use_IMU ? convert_deg_to_rad(IMU->get_heading()) : get_constrained_alpha());
 
         double arc_length_error = angle_error * wR;
@@ -477,12 +562,16 @@ void DriveTrain::drive_to_tower_backboard(double target_angle, double when_to_in
         run_Xdrive(T, S, R);
         pros::delay(20);
         printf("%d,%f,%d\n", pros::millis(), X_error, 0);
-    } while (!((abs(X_error) < 0.6) && S < 0.15 && pid_controller.get_error_average(10) < 0.6));
+    } while (!((abs(X_error) < acceptable_Xerror) && S < acceptable_S && pid_controller.get_error_average(10) < acceptable_average_Xerror));
 
     pros::lcd::set_text(7, "exited");
-    // set_motors(15, -15, 15, -15);
-    pros::delay(50);
-    // point_turn_PID(target_angle, use_IMU);
+
+    if (is_bumper_drive)
+    {
+        set_motors(15, -15, 15, -15);
+        pros::delay(100);
+        // point_turn_PID(target_angle, use_IMU);
+    }
     stop_drive_motors();
 }
 
@@ -567,12 +656,15 @@ void DriveTrain::stop_drive_motors()
 void DriveTrain::driver_control(double Yaxis, double Xaxis, double turn)
 {
 
-    double FL_power = Yaxis + Xaxis + (turn / 2);
-    double FR_power = -Yaxis + Xaxis + (turn / 2);
-    double BL_power = Yaxis - Xaxis + (turn / 2);
-    double BR_power = -Yaxis - Xaxis + (turn / 2);
+    double FL_power = Yaxis + Xaxis + (turn);
+    double FR_power = -Yaxis + Xaxis + (turn);
+    double BL_power = Yaxis - Xaxis + (turn);
+    double BR_power = -Yaxis - Xaxis + (turn);
 
-    set_motors(FL_power, FR_power, BL_power, BR_power);
+    FL->move(FL_power);
+    FR->move(FR_power);
+    BL->move(BL_power);
+    BR->move(BR_power);
 }
 
 void DriveTrain::calibrate_IMU()
@@ -592,7 +684,6 @@ void filter_IMU()
 
 void DriveTrain::setup_sensors()
 {
-    // calibrate_IMU();
 
     BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
     RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);

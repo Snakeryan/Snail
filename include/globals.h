@@ -49,6 +49,8 @@ extern pros::ADIEncoder encoderR;
 extern pros::Imu IMU;
 extern pros::ADIDigitalIn lower_limit_switch;
 extern pros::ADIAnalogIn light_sensor;
+extern pros::ADIAnalogIn left_pot;
+extern pros::ADIAnalogIn right_pot;
 
 extern pros::Vision vision_sensor;
 extern pros::vision_signature_s_t BLUE_BALL_SIGNATURE;
