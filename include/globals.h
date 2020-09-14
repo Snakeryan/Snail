@@ -4,6 +4,11 @@
 #include "main.h"
 #include "Drivetrain.h"
 
+#define MIN(a,b) ((a)<(b)?(a):(b))
+#define MAX(a,b) ((a)>(b)?(a):(b))
+#define pi 3.14159265358979
+#define TAU (pi*2)
+
 //flag for inizializing different LCD screens
 extern bool is_disabled;
 

@@ -2,6 +2,8 @@
 #include "Scorer.h"
 #include "globals.h"
 
+
+
 bool is_disabled;
 
 //object of class DriveTrain:
@@ -36,9 +38,8 @@ pros::Imu IMU(10);
 pros::Vision vision_sensor(6);
 pros::vision_signature_s_t BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
 pros::vision_signature_s_t RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
-
-pros::ADIDigitalIn lower_limit_switch('A');
-pros::ADIAnalogIn light_sensor('B');
+pros::ADIAnalogIn light_sensor({1, 'A'});
+pros::ADIDigitalIn lower_limit_switch({1, 'B'});
 
 pros::ADIAnalogIn left_pot('A');
 pros::ADIAnalogIn right_pot('B');
