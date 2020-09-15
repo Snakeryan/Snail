@@ -17,6 +17,7 @@ void display_data()
 		backboard = vision_sensor.get_by_size(0);
 		pros::lcd::set_text(7, "(X, Y): (" + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")");
 		// pros::lcd::set_text(2, "alpha: " + std::to_string(drivetrain.get_alpha_in_degrees()));
+		pros::lcd::set_text(2, "collision light: " + std::to_string(collision_light_sensor.get_value_calibrated()));
 		// pros::lcd::set_text(3, std::to_string((int)FL.get_temperature()) + "; " + std::to_string((int)FR.get_temperature()) + "; " + std::to_string((int)BL.get_temperature()) + "; " + std::to_string((int)BR.get_temperature()));
 		// pros::lcd::set_text(4, std::to_string((int)indexer.get_temperature()) + "; " + std::to_string((int)flywheel.get_temperature()));
 		// pros::lcd::set_text(5, "light: " + std::to_string(scorer.get_light_calibrated_value()));
@@ -25,7 +26,7 @@ void display_data()
 		pros::lcd::set_text(4, "i: " + std::to_string(IMU.get_heading()) + "a: " + std::to_string(drivetrain.get_alpha_in_degrees()));
 
 		pros::lcd::set_text(6, "pot_L: " + std::to_string(left_pot.get_value()));
-		pros::lcd::set_text(5, "pot_R :" + std::to_string(right_pot.get_value()));
+		pros::lcd::set_text(5, "`pot_R :" + std::to_string(right_pot.get_value()));
 
 		// pros::lcd::set_text(1, "vision X coordinate:" + std::to_string(backboard.x_middle_coord));
 
@@ -84,7 +85,8 @@ void initialize()
 	pros::Task display_data_task(display_data);
 	pros::lcd::register_btn1_cb(on_center_button);
 	display_auton_mode();
-	light_sensor.calibrate();
+	upper_counter_light_sensor.calibrate();
+	collision_light_sensor.calibrate();
 	drivetrain.calibrate_IMU();
 	pros::lcd::set_text(1, "started");
 }
@@ -215,13 +217,14 @@ void run_macros()
 void opcontrol()
 {
 	// pros::lcd::initialize();
+	drivetrain.set_current_global_position(16.077751092179696, 63.107507307056174, 90);
 	while (true)
 	{
 		drivetrain.driver_control(controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y),
 								  controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X),
 								  controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X));
 		run_macros();
-		pros::lcd::set_text(5, std::to_string(pros::millis()));
+		// pros::lcd::set_text(5, std::to_string(pros::millis()));
 		pros::delay(20);
 	}
 }

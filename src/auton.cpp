@@ -70,12 +70,12 @@ void run_skills()
 {
 
     drivetrain.set_current_global_position(0, 0, 0);
-    if (true)
+    if (false)
     {
         drivetrain.center_on_tower_with_bumper(0, true);
-        pros::delay(200);
+        return;
     }
-    scorer.set_intakes(127);
+    // scorer.set_intakes(127);
     drivetrain.drive_to_point(0, 13.72, 0, false, true);
     drivetrain.drive_to_point(20.10, 6.70, 135.5, false, false, NULL, 0, 3000);
     drivetrain.stop_drive_motors();
@@ -94,9 +94,9 @@ void run_skills()
         7.54, 29.62, 200, false, true); //, []() { scorer.dispense(); }, 15);
     // dispense the two blue balls and collect a red ball:
 
-    scorer.set_intakes(127);
-    scorer.set_indexers(127);
-    scorer.set_flywheel(-127);
+    // scorer.set_intakes(127);
+    // scorer.set_indexers(127);
+    // scorer.set_flywheel(-127);
 
     // drivetrain.drive_to_point(
     //     -2.15, 49.93, 329.7, false, false, []() { scorer.set_indexers(127); scorer.set_flywheel(0); }, 3);
@@ -154,7 +154,7 @@ void run_skills()
     //collect the next ball and drive to tower four:
     drivetrain.drive_to_point(-22.15, 88.92, 248.46, false, false);
     drivetrain.drive_to_point(-35.18, 81.66, 264.49, false, true);
-    drivetrain.drive_to_point(-36.98, 112.80, 1.24, false, false, NULL, 0, 3000);
+    drivetrain.drive_to_point(-36.75, 113.34, 1.77, false, false, NULL, 0, 3000);
     drivetrain.stop_drive_motors();
 
     // scorer.reset_balls_counted();

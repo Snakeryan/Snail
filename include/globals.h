@@ -4,10 +4,11 @@
 #include "main.h"
 #include "Drivetrain.h"
 
-#define MIN(a,b) ((a)<(b)?(a):(b))
-#define MAX(a,b) ((a)>(b)?(a):(b))
-#define pi 3.14159265358979
-#define TAU (pi*2)
+#define pi 3.14159265358979323846
+#define TAU pi * 2
+
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 //flag for inizializing different LCD screens
 extern bool is_disabled;
@@ -53,9 +54,10 @@ extern pros::ADIEncoder encoderR;
 //sensors:
 extern pros::Imu IMU;
 extern pros::ADIDigitalIn lower_limit_switch;
-extern pros::ADIAnalogIn light_sensor;
+extern pros::ADIAnalogIn upper_counter_light_sensor;
 extern pros::ADIAnalogIn left_pot;
 extern pros::ADIAnalogIn right_pot;
+extern pros::ADIAnalogIn collision_light_sensor;
 
 extern pros::Vision vision_sensor;
 extern pros::vision_signature_s_t BLUE_BALL_SIGNATURE;

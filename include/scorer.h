@@ -34,7 +34,7 @@ class Scorer
 
     //pointers to the three-wire sensors:
     pros::ADIDigitalIn *lower_limit_switch;
-    pros::ADIAnalogIn *light_sensor;
+    pros::ADIAnalogIn *upper_counter_light_sensor;
 
     void manage_intakes();
     /**
@@ -92,10 +92,10 @@ public:
  *        address of the vision sensor's red ball signature
  * \param lower_limit_switch
  *        address of the lower_limit_switch
- * \param light_sensor
+ * \param upper_counter_light_sensor
  *        address of the upper light sensor
 */
-    Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *indexer, pros::Motor *flywheel, pros::Vision *vision_sensor, pros::vision_signature_s_t *BLUE_BALL_SIGNATURE, pros::vision_signature_s_t *RED_BALL_SIGNATURE, pros::ADIDigitalIn *lower_limit_switch, pros::ADIAnalogIn *light_sensor);
+    Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *indexer, pros::Motor *flywheel, pros::Vision *vision_sensor, pros::vision_signature_s_t *BLUE_BALL_SIGNATURE, pros::vision_signature_s_t *RED_BALL_SIGNATURE, pros::ADIDigitalIn *lower_limit_switch, pros::ADIAnalogIn *upper_counter_light_sensor);
 
     /**
  *        makes all of the scorer threads

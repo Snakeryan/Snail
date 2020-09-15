@@ -44,7 +44,7 @@ double PID_controller::compute(double new_error, double current_time)
     }
 
     //will set integral only if the error is below a certain amount if use_bounded_error is true:
-    if (abs(error) < integral_error_limit && use_bounded_error)
+    if (std::abs(error) < integral_error_limit && use_bounded_error)
     {
         integral += error;
     }

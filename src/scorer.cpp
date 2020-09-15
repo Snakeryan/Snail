@@ -1,6 +1,6 @@
 #include "Scorer.h"
 
-Scorer::Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *indexer, pros::Motor *flywheel, pros::Vision *vision_sensor, pros::vision_signature_s_t *BLUE_BALL_SIGNATURE, pros::vision_signature_s_t *RED_BALL_SIGNATURE, pros::ADIDigitalIn *lower_limit_switch, pros::ADIAnalogIn *light_sensor)
+Scorer::Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *indexer, pros::Motor *flywheel, pros::Vision *vision_sensor, pros::vision_signature_s_t *BLUE_BALL_SIGNATURE, pros::vision_signature_s_t *RED_BALL_SIGNATURE, pros::ADIDigitalIn *lower_limit_switch, pros::ADIAnalogIn *upper_counter_light_sensor)
 {
     this->intakeleft = intakeleft;
     this->intakeright = intakeright;
@@ -10,7 +10,7 @@ Scorer::Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *i
     // this->BLUE_BALL_SIGNATURE = BLUE_BALL_SIGNATURE;
     // this->RED_BALL_SIGNATURE = RED_BALL_SIGNATURE;
     this->lower_limit_switch = lower_limit_switch;
-    this->light_sensor = light_sensor;
+    this->upper_counter_light_sensor = upper_counter_light_sensor;
 }
 
 void Scorer::run_lower_limit_switch()
@@ -20,7 +20,7 @@ void Scorer::run_lower_limit_switch()
 
     // making a variable that stores the previous value of the limit switch:
 
-    if ((lower_limit_switch->get_value() == 1 && prev_lower_limit_value == 0) && abs(lower_prev_time - pros::millis()) > delay_time)
+    if ((lower_limit_switch->get_value() == 1 && prev_lower_limit_value == 0) && std::abs(lower_prev_time - pros::millis()) > delay_time)
     {
         lower_balls_counted++;
         lower_prev_time = pros::millis();
@@ -38,7 +38,7 @@ void Scorer::run_upper_light_sensor()
     double light_sensor_threshold = -500;
 
     // logic to make an upper counting system for balls that have exited our loop:
-    if ((get_light_calibrated_value() > light_sensor_threshold && prev_upper_light_value < light_sensor_threshold) && abs(upper_prev_time - pros::millis()) > delay_time)
+    if ((get_light_calibrated_value() > light_sensor_threshold && prev_upper_light_value < light_sensor_threshold) && std::abs(upper_prev_time - pros::millis()) > delay_time)
     {
         upper_balls_counted++;
         upper_prev_time = pros::millis();
@@ -65,7 +65,7 @@ void Scorer::manage_indexer_and_flywheel()
         num_balls_to_score = 0;
     }
 
-    if(num_balls_to_collect != 0 && !dispense_triggered)
+    if (num_balls_to_collect != 0 && !dispense_triggered)
     {
         set_indexers(127);
     }
@@ -138,7 +138,7 @@ void Scorer::set_indexers(int indexer_power)
 
 double Scorer::get_light_calibrated_value()
 {
-    return light_sensor->get_value_calibrated();
+    return upper_counter_light_sensor->get_value_calibrated();
 }
 
 void Scorer::wait_until_number_of_uppper_balls_counted(int number_of_balls_passed)
@@ -156,7 +156,6 @@ void Scorer::wait_until_number_of_lower_balls_counted(int number_of_balls_passed
         pros::delay(20);
     }
 }
-
 
 void Scorer::score_in_goal_with_light(int num_balls)
 {

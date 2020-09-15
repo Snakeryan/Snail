@@ -19,7 +19,7 @@ const T &constrain(const T &x, const T &a, const T &b)
         return x;
 }
 
-DriveTrain::DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot)
+DriveTrain::DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot, pros::ADIAnalogIn *collision_light_sensor)
 {
     this->encoder_wheel_radius = encoder_wheel_radius;
     this->wL = wL;
@@ -36,6 +36,7 @@ DriveTrain::DriveTrain(double encoder_wheel_radius, double wL, double wR, double
     this->IMU = IMU;
     this->left_pot = left_pot;
     this->right_pot = right_pot;
+    this->collision_light_sensor = collision_light_sensor;
 }
 
 double DriveTrain::compute_alpha(double right_encoder_distance, double left_encoder_distance)
@@ -197,7 +198,7 @@ P1 = -cos(T + pi/4)
 
 P2 = sin(T + pi/4)
 
-s = max(abs(P1), abs(P2)) / S
+s = max(std::abs(P1), std::abs(P2)) / S
 */
 
 double DriveTrain::compute_P1(double T)
@@ -212,43 +213,47 @@ double DriveTrain::compute_P2(double T)
 
 double DriveTrain::compute_s(double P1, double P2, double S)
 {
-    return MAX(abs(P1), abs(P2)) / S;
+    return MAX(std::abs(P1), std::abs(P2)) / S;
 }
 
 /*
     functions to calculate the speed to turn the motors:
 
-    FL = P2/s(1 - abs(R)) + R * S
+    FL = P2/s(1 - std::abs(R)) + R * S
 
-    FR = P1/s(1 - abs(R)) - R * S
+    FR = P1/s(1 - std::abs(R)) - R * S
 
-    BL = P1/s(1 - abs(R)) + R * S
+    BL = P1/s(1 - std::abs(R)) + R * S
     
-    BR = P2/s(1 - abs(R)) - R * S
+    BR = P2/s(1 - std::abs(R)) - R * S
 */
 
 void DriveTrain::compute_FL_motor_speed(double P2, double s, double K_constant, double R, double multiplier)
 {
-    double FL_speed = (P2 / s) * (1 - abs(R)) + R * K_constant;
+    double FL_speed = (P2 / s) * (1 - std::abs(R)) + R * K_constant;
     FL->move_voltage(FL_speed * 12700 * multiplier);
+    // pros::lcd::set_text(0, "FL:" + std::to_string(FL_speed));
 }
 
 void DriveTrain::compute_FR_motor_speed(double P1, double s, double K_constant, double R, double multiplier)
 {
-    double FR_speed = ((P1 / s) * (1 - abs(R)) - R * K_constant) * -1;
+    double FR_speed = ((P1 / s) * (1 - std::abs(R)) - R * K_constant) * -1;
     FR->move_voltage(FR_speed * 12700 * multiplier);
+    // pros::lcd::set_text(1, "FR:" + std::to_string(FR_speed));
 }
 
 void DriveTrain::compute_BL_motor_speed(double P1, double s, double K_constant, double R, double multiplier)
 {
-    double BL_speed = ((P1 / s) * (1 - abs(R)) + R * K_constant);
+    double BL_speed = ((P1 / s) * (1 - std::abs(R)) + R * K_constant);
     BL->move_voltage(BL_speed * 12700 * multiplier);
+    // pros::lcd::set_text(2, "BL:" + std::to_string(BL_speed));
 }
 
 void DriveTrain::compute_BR_motor_speed(double P2, double s, double K_constant, double R, double multiplier)
 {
-    double BR_speed = ((P2 / s) * (1 - abs(R)) - R * K_constant) * -1;
+    double BR_speed = ((P2 / s) * (1 - std::abs(R)) - R * K_constant) * -1;
     BR->move_voltage(BR_speed * 12700 * multiplier);
+    // pros::lcd::set_text(3, "BR:" + std::to_string(BR_speed));
 }
 
 void DriveTrain::set_turn(double turn)
@@ -268,7 +273,7 @@ double DriveTrain::compute_angle_error(double target, double current_angle)
     }
     else if (error >= -pi && error <= 0)
     {
-        return abs(error);
+        return std::abs(error);
     }
     else if (error > 0 && error < pi)
     {
@@ -276,7 +281,7 @@ double DriveTrain::compute_angle_error(double target, double current_angle)
     }
     else
     {
-        return abs(error - TAU);
+        return std::abs(error - TAU);
     }
 }
 
@@ -285,6 +290,12 @@ void DriveTrain::run_Xdrive(double T, double S, double R)
     double P1 = compute_P1(T);
     double P2 = compute_P2(T);
     double s = compute_s(P1, P2, S);
+
+    // pros::lcd::set_text(0, "s:" + std::to_string(s));
+    // pros::lcd::set_text(1, "P2: " + std::to_string(P2));
+    // pros::lcd::set_text(2, "P1: " + std::to_string(P1));
+    // pros::lcd::set_text(3, "R: " + std::to_string(R));
+    // pros::lcd::set_text(5, "MAX(std::abs(P1), std::abs(P2)): " + std::to_string(MAX(std::abs(P1), std::abs(P2))));
 
     //how much power to apply to each motor:
     compute_FL_motor_speed(P2, s, 1, R, 2);
@@ -338,21 +349,21 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
         // rotational error (have arc_length_error so that we can convert angle error into inch):
         angle_error = compute_angle_error(target_angle, get_constrained_alpha());
         double arc_length_error = angle_error * wR;
-        if (abs(current_distance_error) < 2)
+        if (std::abs(current_distance_error) < 2)
         {
             arc_length_error = 0;
         }
 
         //ratio between the rotational and translational errors (tells how much motor power to apply to each):
-        double R = MIN((arc_length_error * rotational_KP) / (15 + abs(current_distance_error)), 1); // formula was previously: 0.5 * arc_length_error / (current_distance_error + arc_length_error * 0.5);
+        double R = MIN((arc_length_error * rotational_KP) / (15 + std::abs(current_distance_error)), 1); // formula was previously: 0.5 * arc_length_error / (current_distance_error + arc_length_error * 0.5);
         R = constrain(R, -1.0, 1.0);
 
         //how much motor power to apply to translational (if S = 1 more translation and S = 0 is less translational):
         double S;
 
-        if (abs(current_distance_error) < slow_down_distance_threshold)
+        if (std::abs(current_distance_error) < slow_down_distance_threshold)
         {
-            if (abs(current_distance_error) < 3)
+            if (std::abs(current_distance_error) < 3)
             {
                 accumulated_error += current_distance_error;
             }
@@ -361,7 +372,7 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
                 accumulated_error = 0;
             }
 
-            S = ((abs(current_distance_error)) / (slow_down_distance_threshold * 1.7)) + abs(accumulated_error * 0.0015);
+            S = ((std::abs(current_distance_error)) / (slow_down_distance_threshold * 1.7)) + std::abs(accumulated_error * 0.0015);
 
             S = constrain(S, 0.0, 1.0);
         }
@@ -394,7 +405,7 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
 
         //delay (can be very small):
         pros::delay(20);
-    } while ((abs(current_distance_error) > acceptable_distance_error) && abs(prev_time - pros::millis()) < timeout);
+    } while ((std::abs(current_distance_error) > acceptable_distance_error) && std::abs(prev_time - pros::millis()) < timeout);
 
     //if you want to have much less final error in the target angle:
     if (use_precise_turn)
@@ -408,27 +419,28 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
 
 bool DriveTrain::collision_detected()
 {
+    double light_sensor_threshold;
     return (delta_left_encoder_distance == 0 && delta_right_encoder_distance == 0 && delta_middle_encoder_distance == 0);
 }
 
 bool DriveTrain::is_L_pot_bending()
 {
-    double L_pot_threshold = 765;
+    double L_pot_threshold = 750;
     double L_pot_error = L_pot_threshold - left_pot->get_value();
-    return abs(L_pot_error) > 20;
+    return std::abs(L_pot_error) > 30;
 }
 
 bool DriveTrain::is_R_pot_bending()
 {
-    double R_pot_threshold = 765;
+    double R_pot_threshold = 738;
     double R_pot_error = R_pot_threshold - right_pot->get_value();
-    return abs(R_pot_error) > 30;
+    return std::abs(R_pot_error) > 30;
 }
 
-void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU)
+void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU, double timeout)
 {
-    double L_pot_threshold = 765;
-    double R_pot_threshold = 760;
+    double L_pot_threshold = 732;
+    double R_pot_threshold = 738;
     double prev_time = pros::millis();
     PID_controller pot_L_controller(0.005, 0, 0, 1, 0);
     PID_controller pot_R_controller(0.005, 0, 0, 1, 0);
@@ -450,45 +462,43 @@ void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU)
 
         if (L_pot_bend_detected)
         {
-            R = MIN((arc_length_error * 1) / (abs(L_pot_error * 0.01)), 1);
-            S = pot_L_controller.compute(abs(L_pot_error));
-            T = atan2(-10, abs(L_pot_error) * 0.001);
+            R = MIN((arc_length_error * 1) / (std::abs(L_pot_error * 0.01)), 1);
+            S = pot_L_controller.compute(std::abs(L_pot_error));
+            T = atan2(-10, std::abs(L_pot_error) * 0.001);
         }
         else if (R_pot_bend_detected)
         {
-            R = MIN((arc_length_error * 1) / (abs(R_pot_error * 0.01)), 1);
-            S = pot_R_controller.compute(abs(R_pot_error));
-            T = atan2(-10, abs(R_pot_error) * -0.001);
+            R = MIN((arc_length_error * 1) / (std::abs(R_pot_error * 0.01)), 1);
+            S = pot_R_controller.compute(std::abs(R_pot_error));
+            T = atan2(-10, std::abs(R_pot_error) * -0.001);
         }
 
-        if(L_pot_bend_detected && R_pot_bend_detected)
+        if (L_pot_bend_detected && R_pot_bend_detected)
         {
             R = MIN((arc_length_error * 1) / 30, 1);
             S = 0.3;
-            T = atan2(-10, ((abs(R_pot_error) / -abs(R_pot_error)) / 2) * -0.001);
+            T = atan2(-10, ((std::abs(R_pot_error) / -std::abs(R_pot_error)) / 2) * -0.001);
         }
 
         if (!R_pot_bend_detected && !L_pot_bend_detected)
         {
-            R = MIN((arc_length_error * 1) / 100, 1);
+            R = MIN((arc_length_error * 1) / 1000, 1);
             S = 0.3;
             T = atan2(10, 0);
         }
 
-
         R = constrain(R, -1.0, 1.0);
         S = constrain(S, 0.0, 1.0);
-        pros::lcd::set_text(0, R_pot_bend_detected ? "R_pot is bending" : "R_pot is not bending");
-        pros::lcd::set_text(1, "S: " + std::to_string(S));
-        pros::lcd::set_text(2, "L_PID value: " + std::to_string(abs(pot_L_controller.compute(abs(L_pot_error)))));
-        // pros::lcd::set_text(3, "R: " + std::to_string(abs(R)));
+        // pros::lcd::set_text(0, "T:" + std::to_string(T));
+        pros::lcd::set_text(3, "R: " + std::to_string(R));
+        // pros::lcd::set_text(1, "S: " + std::to_string(S));
 
         run_Xdrive(T, S, R);
         pros::delay(20);
 
-    } while (!collision_detected() || is_R_pot_bending() || is_L_pot_bending() || abs(pros::millis() - prev_time) < 150);
+    } while (std::abs(prev_time - pros::millis()) < timeout); //(!collision_detected() || is_R_pot_bending() || is_L_pot_bending() || std::abs(pros::millis() - prev_time) < 150);
     stop_drive_motors();
-     pros::lcd::set_text(3, "exited");
+    pros::lcd::set_text(3, "exited");
 }
 
 void DriveTrain::drive_to_tower_backboard(double target_angle, double when_to_include_integral, bool use_IMU, bool is_bumper_drive)
@@ -549,20 +559,19 @@ void DriveTrain::drive_to_tower_backboard(double target_angle, double when_to_in
         double arc_length_error = angle_error * wR;
 
         double T = atan2(.5, X_error);
-        S = pid_controller.compute(abs(X_error));
-        double R = MIN((arc_length_error * 2) / (15 + abs(X_error)), 1);
+        S = pid_controller.compute(std::abs(X_error));
+        double R = MIN((arc_length_error * 2) / (15 + std::abs(X_error)), 1);
 
         S = constrain(S, 0.0, 1.0);
 
         pros::lcd::set_text(3, "S: " + std::to_string(S));
         pros::lcd::set_text(4, std::to_string((int)FL->get_voltage()) + " " + std::to_string((int)FR->get_voltage()) + " " + std::to_string((int)BL->get_voltage()) + " " + std::to_string((int)BR->get_voltage()));
-
         R = constrain(R, -1.0, 1.0);
 
         run_Xdrive(T, S, R);
         pros::delay(20);
         printf("%d,%f,%d\n", pros::millis(), X_error, 0);
-    } while (!((abs(X_error) < acceptable_Xerror) && S < acceptable_S && pid_controller.get_error_average(10) < acceptable_average_Xerror));
+    } while (!((std::abs(X_error) < acceptable_Xerror) && S < acceptable_S && pid_controller.get_error_average(10) < acceptable_average_Xerror));
 
     pros::lcd::set_text(7, "exited");
 
@@ -598,7 +607,7 @@ void DriveTrain::point_turn_PID(double target, bool use_IMU, const double Kp, co
         pros::lcd::set_text(4, "the angle error is: " + std::to_string(angle_error * 180 / pi));
         pros::lcd::set_text(3, "the PID value is: " + std::to_string(motor_power));
         pros::delay(20);
-    } while (abs(pid_controller.get_derivative()) > 0.000000000001 || abs(angle_error) > 0.004);
+    } while (std::abs(pid_controller.get_derivative()) > 0.000000000001 || std::abs(angle_error) > 0.004);
     pros::lcd::set_text(0, "pid escaped");
 }
 

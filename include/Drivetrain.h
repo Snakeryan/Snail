@@ -39,6 +39,7 @@ class DriveTrain
 
     pros::Imu *IMU;
 
+    pros::ADIAnalogIn *collision_light_sensor;
     pros::ADIAnalogIn *left_pot;
     pros::ADIAnalogIn *right_pot;
 
@@ -207,7 +208,6 @@ class DriveTrain
 */
     void update_odometry();
 
-
     /**
  *        this is the formula used by this method: (rad * 180)/pi
  * \param rad
@@ -273,7 +273,6 @@ class DriveTrain
     void make_odometry_update_thread();
 
 public:
-
     /** 
  *        this puts the update_odometry function into a while(true) loop with a very small delay of ten miliseconds 
 */
@@ -334,7 +333,7 @@ public:
  * \param encoderM
  *        the address of the middle encoder
 */
-    DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot);
+    DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot, pros::ADIAnalogIn *collision_light_sensor);
 
     /**  
  * \return the heading of the robot in degrees (wrapped from 0-360)
@@ -411,7 +410,7 @@ public:
 
     void setup();
 
-    void center_on_tower_with_bumper(double angle, bool use_IMU);
+    void center_on_tower_with_bumper(double angle, bool use_IMU, double timeout = 2000);
 
     ~DriveTrain();
 };

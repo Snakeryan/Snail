@@ -7,10 +7,10 @@
 bool is_disabled;
 
 //object of class DriveTrain:
-DriveTrain drivetrain(1.375, 6.9922569449, 6.9922569449, 6.9922569449, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM, &vision_sensor, &IMU, &left_pot, &right_pot);
+DriveTrain drivetrain(1.375, 6.9922569449, 6.9922569449, 6.9922569449, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM, &vision_sensor, &IMU, &left_pot, &right_pot, &collision_light_sensor);
 
 //object of class Scorer:
-Scorer scorer(&intakeleft, &intakeright, &indexer, &flywheel, &vision_sensor, &BLUE_BALL_SIGNATURE, &RED_BALL_SIGNATURE, &lower_limit_switch, &light_sensor);
+Scorer scorer(&intakeleft, &intakeright, &indexer, &flywheel, &vision_sensor, &BLUE_BALL_SIGNATURE, &RED_BALL_SIGNATURE, &lower_limit_switch, &upper_counter_light_sensor);
 
 //motors:
 pros::Motor intakeleft(2, pros::E_MOTOR_GEARSET_06, false, pros::E_MOTOR_ENCODER_COUNTS);
@@ -38,8 +38,9 @@ pros::Imu IMU(10);
 pros::Vision vision_sensor(6);
 pros::vision_signature_s_t BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
 pros::vision_signature_s_t RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
-pros::ADIAnalogIn light_sensor({1, 'A'});
+pros::ADIAnalogIn upper_counter_light_sensor({1, 'D'});
 pros::ADIDigitalIn lower_limit_switch({1, 'B'});
+pros::ADIAnalogIn collision_light_sensor({1, 'H'});
 
 pros::ADIAnalogIn left_pot('A');
 pros::ADIAnalogIn right_pot('B');
