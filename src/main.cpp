@@ -104,7 +104,6 @@ void stop_all_motors()
  */
 void disabled()
 {
-	// selector::init();
 }
 
 /**
@@ -201,15 +200,15 @@ void run_macros()
 	{
 		scorer.set_flywheel(0);
 	}
-	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B))
+		if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B))
 	{
-		printf("drivetrain.drive_to_point(%.2f, %.2f, %.2f, false, true)\n", drivetrain.get_globalX(), drivetrain.get_globalY(), drivetrain.get_alpha_in_degrees());
+		printf("drivetrain.drive_to_point(%.2f, %.2f, %.2f, false, true);\n", drivetrain.get_globalX(), drivetrain.get_globalY(), drivetrain.get_alpha_in_degrees());
 		// (4, "drivetrain.drive_to_point( " + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")" + std::to_string(drivetrain.get_alpha_in_degrees()));
 		pros::delay(200);
 	}
 	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X))
 	{
-		printf("drivetrain.drive_to_point(%.2f, %.2f, %.2f, false, false)\n", drivetrain.get_globalX(), drivetrain.get_globalY(), drivetrain.get_alpha_in_degrees());
+		printf("drivetrain.drive_to_point(%.2f, %.2f, %.2f, false, false);\n", drivetrain.get_globalX(), drivetrain.get_globalY(), drivetrain.get_alpha_in_degrees());
 		pros::delay(200);
 	}
 }

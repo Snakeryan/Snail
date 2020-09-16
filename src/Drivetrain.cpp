@@ -312,11 +312,12 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
     const double motors_on_off = 1;
     const double K_constant = 1;
     const double multiplier = 2;
+    const double acceptable_angle_error = 1;
 
     double prev_time = pros::millis();
 
     // when to slow down using a threshold:
-    double slow_down_distance_threshold = 18;
+    double slow_down_distance_threshold = 18; 
 
     // acceptable distance error:
     double acceptable_distance_error = 0.2;
@@ -338,6 +339,8 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
     //flag to see if the trigger function has activated
     bool trigger_activated = false;
 
+    
+
     do
     {
         // variables that calculate the error in the X coordinate, Y coordinate, and angle:
@@ -355,7 +358,13 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
         }
 
         //ratio between the rotational and translational errors (tells how much motor power to apply to each):
-        double R = MIN((arc_length_error * rotational_KP) / (15 + std::abs(current_distance_error)), 1); // formula was previously: 0.5 * arc_length_error / (current_distance_error + arc_length_error * 0.5);
+        double R = MIN((arc_length_error * rotational_KP) / (15 + std::abs(current_distance_error)), 1);
+
+        // if (std::abs(current_distance_error) < acceptable_distance_error)
+        // {
+        //     R = MIN((arc_length_error * rotational_KP) / 15, 1);
+        // }
+
         R = constrain(R, -1.0, 1.0);
 
         //how much motor power to apply to translational (if S = 1 more translation and S = 0 is less translational):
@@ -372,7 +381,7 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
                 accumulated_error = 0;
             }
 
-            S = ((std::abs(current_distance_error)) / (slow_down_distance_threshold * 1.7)) + std::abs(accumulated_error * 0.0015);
+            S = ((std::abs(current_distance_error)) / (slow_down_distance_threshold * 1.6)) + std::abs(accumulated_error * 0.0015);//((std::abs(current_distance_error)) / (slow_down_distance_threshold * 1.7)) + std::abs(accumulated_error * 0.0015)
 
             S = constrain(S, 0.0, 1.0);
         }
@@ -405,7 +414,7 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
 
         //delay (can be very small):
         pros::delay(20);
-    } while ((std::abs(current_distance_error) > acceptable_distance_error) && std::abs(prev_time - pros::millis()) < timeout);
+    } while (((std::abs(current_distance_error) > acceptable_distance_error)) && std::abs(prev_time - pros::millis()) < timeout);
 
     //if you want to have much less final error in the target angle:
     if (use_precise_turn)
@@ -464,13 +473,13 @@ void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU, 
         {
             R = MIN((arc_length_error * 1) / (std::abs(L_pot_error * 0.01)), 1);
             S = pot_L_controller.compute(std::abs(L_pot_error));
-            T = atan2(-10, std::abs(L_pot_error) * 0.001);
+            T = atan2(-10, std::abs(L_pot_error) * 0.01);
         }
         else if (R_pot_bend_detected)
         {
             R = MIN((arc_length_error * 1) / (std::abs(R_pot_error * 0.01)), 1);
             S = pot_R_controller.compute(std::abs(R_pot_error));
-            T = atan2(-10, std::abs(R_pot_error) * -0.001);
+            T = atan2(-10, std::abs(R_pot_error) * -0.01);
         }
 
         if (L_pot_bend_detected && R_pot_bend_detected)
