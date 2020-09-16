@@ -94,28 +94,44 @@ void run_skills()
         7.54, 29.62, 200, false, true); //, []() { scorer.dispense(); }, 15);
     // dispense the two blue balls and collect a red ball:
 
-    // scorer.set_intakes(127);
-    // scorer.set_indexers(127);
-    // scorer.set_flywheel(-127);
+    scorer.set_intakes(127);
+    scorer.set_indexers(127);
+    scorer.set_flywheel(-127);
 
     // drivetrain.drive_to_point(
     //     -2.15, 49.93, 329.7, false, false, []() { scorer.set_indexers(127); scorer.set_flywheel(0); }, 3);
 
-    drivetrain.drive_to_point(
-        -6.72, 40.17, 346.43, false, false); //,[]() { scorer.set_indexers(127); scorer.set_flywheel(0); }, 3);
+    // d
+    // .72, 40.17, 357.84, false, true); //,[]() { scorer.set_indexers(127); scorer.set_flywheel(0); }, 3);
+    // drivetrain.drive_to_point(0, 42.99, 329.42, false, true);
+    drivetrain.drive_to_point(0.00, 54, 330.14, false, true);
+    
+    drivetrain.drive_to_point(-9.24, 69.50, 337.25, false, true);
+    drivetrain.stop_drive_motors();
+    return;
+    drivetrain.drive_to_point(-8.68, 61.89, 87.61, false, true);
+    drivetrain.drive_to_point(12.53, 61.74, 87.70, false, true);
+    drivetrain.stop_drive_motors();
+    return;
 
-    drivetrain.drive_to_point(-6.06, 47.29, 336.40, false, false);
-    drivetrain.drive_to_point(-12.14, 62.60, 359.41, false, false);
-    drivetrain.drive_to_point(-4.42, 62.45, 89.18, false, false);
+    drivetrain.center_on_tower_with_bumper(90, false);
+    pros::delay(200);
+    drivetrain.set_current_global_position(16.077751092179696, 63.107507307056174, 90);
+
+    drivetrain.drive_to_point(0, 42.99, 329.42, false, true);
+    drivetrain.drive_to_point(0, 60, 333.06, false, true);
+    drivetrain.drive_to_point(-9.42, 62.45, 89.18, false, true, NULL, 0, 100);
     drivetrain.stop_drive_motors();
 
     //drive and turn to tower two:
     // scorer.set_indexers(127);
-    drivetrain.drive_to_point(20, 60.97, 91.34, false, false, NULL, 0, 2000);
+    drivetrain.drive_to_point(20, 60.97, 91.34, false, true, NULL, 0, 2000);
     // scorer.set_flywheel(0);
     drivetrain.center_on_tower_with_bumper(90, false);
     pros::delay(200);
     drivetrain.set_current_global_position(16.077751092179696, 63.107507307056174, 90);
+
+    return;
     // WAYPOINTS to tower three:
     drivetrain.drive_to_point(9.64, 63.13, 90.69, false, true);
     drivetrain.drive_to_point(-0.33655291345362054, 104.75536482291518, 38.44431091681539, false, true);

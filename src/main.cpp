@@ -216,7 +216,7 @@ void run_macros()
 void opcontrol()
 {
 	// pros::lcd::initialize();
-	drivetrain.set_current_global_position(16.077751092179696, 63.107507307056174, 90);
+	// drivetrain.set_current_global_position(16.077751092179696, 63.107507307056174, 90);
 	while (true)
 	{
 		drivetrain.driver_control(controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y),
