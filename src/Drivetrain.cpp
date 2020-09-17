@@ -128,6 +128,7 @@ double DriveTrain::convert_rad_to_deg(double rad)
 
 double DriveTrain::get_alpha_in_degrees()
 {
+    // return convert_rad_to_deg_wraped(alpha);
     return convert_rad_to_deg_wraped(alpha);
 }
 
@@ -317,7 +318,7 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
     double prev_time = pros::millis();
 
     // when to slow down using a threshold:
-    double slow_down_distance_threshold = 18; 
+    double slow_down_distance_threshold = 18;
 
     // acceptable distance error:
     double acceptable_distance_error = 0.2;
@@ -336,6 +337,14 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
         slow_down_distance_threshold = 10;
     }
 
+    //PID controllers:
+
+    PID_controller S_controller(1 / (slow_down_distance_threshold * 1.6), 0.0015, 0, 1, 0.1);
+
+    //constraining integral for S_controller:
+
+    S_controller.use_integrater_error_bound(3);
+    S_controller.use_crossover_zero();
 
     // setting the initial distance error:
     double initial_distance_error = sqrt(pow(tX - globalX, 2) + pow(tY - globalY, 2));
@@ -348,8 +357,6 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
 
     //flag to see if the trigger function has activated
     bool trigger_activated = false;
-
-    
 
     do
     {
@@ -382,18 +389,7 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
 
         if (std::abs(current_distance_error) < slow_down_distance_threshold)
         {
-            if (std::abs(current_distance_error) < 3)
-            {
-                accumulated_error += current_distance_error;
-            }
-            else
-            {
-                accumulated_error = 0;
-            }
-
-            S = ((std::abs(current_distance_error)) / (slow_down_distance_threshold * 1.6)) + std::abs(accumulated_error * 0.0015);//((std::abs(current_distance_error)) / (slow_down_distance_threshold * 1.7)) + std::abs(accumulated_error * 0.0015)
-
-            S = constrain(S, 0.0, 1.0);
+            S = S_controller.compute(std::abs(current_distance_error));
         }
         else
         {
@@ -480,7 +476,7 @@ void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU, 
         double S;
         double T;
 
-        if (L_pot_bend_detected) 
+        if (L_pot_bend_detected)
         {
             R = MIN((arc_length_error * 1) / (std::abs(L_pot_error * 0.01)), 1);
             S = pot_L_controller.compute(std::abs(L_pot_error));
