@@ -329,7 +329,7 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
     //in between waypoint and destination point:
     else if (point_type == 2)
     {
-        acceptable_distance_error = 0.5;
+        acceptable_distance_error = 0.2;
         slow_down_distance_threshold = 10;
     }
 
