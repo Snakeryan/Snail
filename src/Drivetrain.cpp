@@ -304,10 +304,10 @@ void DriveTrain::run_Xdrive(double T, double S, double R)
     compute_BR_motor_speed(P2, s, 1, R, 2);
 }
 
-void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, bool is_waypoint, const std::function<void()> &trigger, double trigger_distance, double timeout)
+void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, int point_type, const std::function<void()> &trigger, double trigger_distance, double timeout)
 {
     //hyperparameters:
-    const double rotational_KP = 2;
+    const double rotational_KP = 3;
     const double translational_KP = 2;
     const double motors_on_off = 1;
     const double K_constant = 1;
@@ -322,11 +322,21 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
     // acceptable distance error:
     double acceptable_distance_error = 0.2;
 
-    if (is_waypoint)
+    //waypoint point type:
+    if (point_type == 1)
     {
         acceptable_distance_error = 1.5;
         slow_down_distance_threshold = 3;
     }
+
+    //in between waypoint and destination point:
+    else if (point_type == 2)
+    {
+        acceptable_distance_error = 0.5;
+        slow_down_distance_threshold = 10;
+    }
+
+
     // setting the initial distance error:
     double initial_distance_error = sqrt(pow(tX - globalX, 2) + pow(tY - globalY, 2));
 
@@ -358,7 +368,7 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
         }
 
         //ratio between the rotational and translational errors (tells how much motor power to apply to each):
-        double R = MIN((arc_length_error * rotational_KP) / (15 + std::abs(current_distance_error)), 1);
+        double R = MIN((arc_length_error * rotational_KP) / (10 + std::abs(current_distance_error)), 1);
 
         // if (std::abs(current_distance_error) < acceptable_distance_error)
         // {
@@ -458,8 +468,9 @@ void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU, 
         double L_pot_error = L_pot_threshold - left_pot->get_value();
         double R_pot_error = R_pot_threshold - right_pot->get_value();
 
-        bool L_pot_bend_detected = is_L_pot_bending();
-        bool R_pot_bend_detected = is_R_pot_bending();
+        bool L_pot_bend_detected = false; //is_L_pot_bending();
+        bool R_pot_bend_detected = false;
+        //is_R_pot_bending();
 
         double angle_error = compute_angle_error(convert_deg_to_rad(target_angle), use_IMU ? convert_deg_to_rad(IMU->get_heading()) : get_constrained_alpha());
         double arc_length_error = angle_error * wR;
@@ -469,7 +480,7 @@ void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU, 
         double S;
         double T;
 
-        if (L_pot_bend_detected)
+        if (L_pot_bend_detected) 
         {
             R = MIN((arc_length_error * 1) / (std::abs(L_pot_error * 0.01)), 1);
             S = pot_L_controller.compute(std::abs(L_pot_error));
