@@ -305,22 +305,18 @@ void DriveTrain::run_Xdrive(double T, double S, double R)
     compute_BR_motor_speed(P2, s, 1, R, 2);
 }
 
-void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, int point_type, const std::function<void()> &trigger, double trigger_distance, double timeout)
+void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, int point_type, double rotational_KP, const std::function<void()> &trigger, double trigger_distance, double timeout)
 {
+    //configuration:
+
     //hyperparameters:
-    const double rotational_KP = 3;
     const double translational_KP = 2;
     const double motors_on_off = 1;
     const double K_constant = 1;
     const double multiplier = 2;
     const double acceptable_angle_error = 1;
 
-    double prev_time = pros::millis();
-
-    // when to slow down using a threshold:
     double slow_down_distance_threshold = 18;
-
-    // acceptable distance error:
     double acceptable_distance_error = 0.2;
 
     //waypoint point type:
@@ -338,21 +334,16 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
     }
 
     //PID controllers:
-
     PID_controller S_controller(1 / (slow_down_distance_threshold * 1.6), 0.0015, 0, 1, 0.1);
 
     //constraining integral for S_controller:
-
     S_controller.use_integrater_error_bound(3);
     S_controller.use_crossover_zero();
 
-    // setting the initial distance error:
+    // utilities:
+    double start_time = pros::millis();
     double initial_distance_error = sqrt(pow(tX - globalX, 2) + pow(tY - globalY, 2));
-
-    // changing the target angle to radians:
     double target_angle = convert_deg_to_rad(target_angle_in_degrees);
-
-    // declaring all of the error variables:
     double prev_angle_error, prev_distance_error, current_distance_error, angle_error, accumulated_error;
 
     //flag to see if the trigger function has activated
@@ -369,18 +360,13 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
         // rotational error (have arc_length_error so that we can convert angle error into inch):
         angle_error = compute_angle_error(target_angle, get_constrained_alpha());
         double arc_length_error = angle_error * wR;
-        if (std::abs(current_distance_error) < 2)
-        {
-            arc_length_error = 0;
-        }
+        // if (std::abs(current_distance_error) < 2)
+        // {
+        //     arc_length_error = 0;
+        // }
 
         //ratio between the rotational and translational errors (tells how much motor power to apply to each):
-        double R = MIN((arc_length_error * rotational_KP) / (10 + std::abs(current_distance_error)), 1);
-
-        // if (std::abs(current_distance_error) < acceptable_distance_error)
-        // {
-        //     R = MIN((arc_length_error * rotational_KP) / 15, 1);
-        // }
+        double R = (arc_length_error * rotational_KP) / (10 + std::abs(current_distance_error));
 
         R = constrain(R, -1.0, 1.0);
 
@@ -408,27 +394,18 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
         // pros::lcd::set_text(6, "alpha: " + std::to_string(convert_rad_to_deg(alpha)));
         // pros::lcd::set_text(7, "coordinates: (" + std::to_string(globalX) + ", " + std::to_string(globalY) + ")");
 
-        //setting the previous values of the translational and rotational errors:
         prev_angle_error = angle_error;
 
-        //conditional statement if you want to dispence balls at a certain distance away from a coordinate:
+        //conditional statement if you want to trigger custom function at a certain distance away from a coordinate:
         if (trigger != 0 && current_distance_error < trigger_distance && !trigger_activated)
         {
             trigger();
             trigger_activated = true;
         }
 
-        //delay (can be very small):
         pros::delay(20);
-    } while (((std::abs(current_distance_error) > acceptable_distance_error)) && std::abs(prev_time - pros::millis()) < timeout);
+    } while (((std::abs(current_distance_error) > acceptable_distance_error)) && std::abs(start_time - pros::millis()) < timeout);
 
-    //if you want to have much less final error in the target angle:
-    if (use_precise_turn)
-    {
-        point_turn_PID(target_angle, 37.5, .7, 0);
-    }
-
-    //if you want to see when the function has exited:
     pros::lcd::set_text(0, "drive_to_point exited");
 }
 

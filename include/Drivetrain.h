@@ -296,7 +296,7 @@ public:
  * \param timeout
  *       the maximum amount of time the robot can spend driving to a point (has default of 10000 milliseconds`)
 */
-    void drive_to_point(double tX, double tY, double target_angle_in_degrees, bool use_precise_turn, int point_type, const std::function<void()> &trigger = 0, double trigger_distance = 3, double timeout = 10000);
+    void drive_to_point(double tX, double tY, double target_angle_in_degrees, int point_type = 2, double rotational_KP = 1, const std::function<void()> &trigger = 0, double trigger_distance = 3, double timeout = 10000);
 
     /** 
  *        this method changes where the robot thinks it is with respect to its coordinates and heading (only use this if you are starting in a new position)

@@ -18,7 +18,7 @@ void run_skills()
     drivetrain.set_current_global_position(0, 0, 0);
     if (true)
     {
-        drivetrain.drive_to_point(0, 30, 0, false, 2);
+        drivetrain.drive_to_point(0, 30, 90, 2);
         drivetrain.stop_drive_motors();
         return;
     }
