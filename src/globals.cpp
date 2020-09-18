@@ -29,9 +29,9 @@ pros::Motor BL(12, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_COUNTS
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
 //Sensors
-pros::ADIEncoder encoderL('C', 'D', true);
+pros::ADIEncoder encoderL('C', 'D', false);
 pros::ADIEncoder encoderM('G', 'H', true);
-pros::ADIEncoder encoderR('E', 'F', false);
+pros::ADIEncoder encoderR('E', 'F', true);
 
 pros::Imu IMU(10);
 
