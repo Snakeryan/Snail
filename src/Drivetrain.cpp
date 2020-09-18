@@ -188,8 +188,8 @@ void DriveTrain::turn_to_point(double destX, double destY)
     {
         angle += TAU;
     }
-    pros::lcd::set_text(0, "the angle to turn is: " + std::to_string(convert_rad_to_deg_wraped(angle)));
-    point_turn_PID(angle);
+    pros::lcd::set_text(5, "the angle to turn is: " + std::to_string(convert_rad_to_deg_wraped(angle)));
+    point_turn_PID(convert_rad_to_deg_wraped(angle));
 }
 
 /*
