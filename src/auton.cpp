@@ -31,10 +31,11 @@ void run_field_sides()
 
     // =========== DRIVE TO TOWER THREE ===========
     drivetrain.drive_to_point(-33.14, -44.95, 319.14, 2, 1);
-    drivetrain.drive_to_point(-36.57, -41.71, 319.24, 2, 3, NULL, 0, 1500);
+    // drivetrain.drive_to_point(-36.57, -41.71, 319.24, 2, 3, NULL, 0, 1500);
     drivetrain.stop_drive_motors();
 
     // =========== RESET GLOBAL POSITION ===========
+    drivetrain.center_on_tower_with_bumper(319.24, false, 1500);
     pros::delay(200);
     drivetrain.set_current_global_position(0, 0, 0);
 
@@ -50,7 +51,7 @@ void run_field_sides()
     // =========== DRIVE TO TOWER FOUR ===========
     drivetrain.drive_to_point(-37.68, 5.32, 331.42, 1, 1);
     drivetrain.drive_to_point(-47.49, 5.96, 320.52, 1, 1);
-    drivetrain.drive_to_point(-52.83, 8.43, 323.76, 2, 1);
+    drivetrain.drive_to_point(-52.83, 8.43, 323.76, 2, 1, NULL, 0, 2000);
 
     // =========== RESET GLOBAL POSITION ===========
     drivetrain.center_on_tower_with_bumper(317, true, 1500);
