@@ -78,40 +78,29 @@ void run_skills()
     scorer.set_indexers(127);
 
     // =========== BACK OUT OF TOWER FOUR ===========
-    drivetrain.drive_to_point(2.10, -5.68, 344.58, 1, 1);
+    drivetrain.drive_to_point(6.75, -8.09, 339.96, 1, 3);
 
     // =========== WAYPOINT TO BALL F ===========
-    drivetrain.drive_to_point(11.69, -9.97, 249.30, 2, 0, NULL, 0, 1500);
-
-    // =========== TURN TO BALL F ===========
-    drivetrain.turn_to_point(-6.91, -19.00);
-    drivetrain.set_current_global_position(drivetrain.get_globalX(), drivetrain.get_globalY(), IMU.get_heading());
+    drivetrain.drive_to_point(11.52, -33.94, 314, 2, 1, NULL, 0, 1500);
 
     // =========== COLLECT BALL F ===========
-    drivetrain.drive_to_point(-13.53, -20.26, 257.26, 2, 3);
+
+    drivetrain.drive_to_point(1.14, -24.35, 314, 2, 1);
 
     // =========== WAYPOINT TO TOWER FIVE ===========
-    drivetrain.drive_to_point(-24.82, -34.98, 275.82, 1, 1);
+    drivetrain.drive_to_point(-27.59, -47.02, 313.64, 2, 3);
 
     // =========== DRIVE TO TOWER FIVE ===========
-    drivetrain.drive_to_point(-30.27, -35.54, 274.12, 2, 3, NULL, 0, 3000);
-    drivetrain.stop_drive_motors();
-    drivetrain.set_current_global_position(drivetrain.get_globalX(), drivetrain.get_globalY(), IMU.get_heading());
-    pros::delay(1000);
+    drivetrain.drive_to_point(-30.10, -44.24, 311.87, 0, 3);
 
     // =========== BACK OUT OF TOWER FIVE ===========
-    drivetrain.drive_to_point(-20.67, -38.01, 225.83, 1, 1);
 
     // =========== COLLECT BALL G ===========
-    drivetrain.drive_to_point(-43.52, -59.36, 226.15, 2, 3);
-    drivetrain.drive_to_point(-56.68, -71.52, 235.29, 2, 3);
 
     // =========== DRIVE TO TOWER SIX ===========
-    drivetrain.turn_to_point(-68.14, -81.02);
-    drivetrain.drive_to_point(-68.14, -81.02, 266.49, 2, 3, NULL, 0, 1500);
-     drivetrain.drive_to_point(-74.74, -80.10, 265.09, 2, 3, NULL, 0, 2000);
+
     // =========== RESET GLOBAL POSITION ===========
-    drivetrain.center_on_tower_with_bumper(268, true, 2000);
+    drivetrain.center_on_tower_with_bumper(312, true, 1000);
     pros::delay(200);
     // drivetrain.set_current_global_position(0, 0, 0);
 

@@ -139,6 +139,17 @@ double DriveTrain::convert_deg_to_rad(double deg)
     return (deg * pi) / 180;
 }
 
+double DriveTrain::get_delta_IMU_heading()
+{
+    double prev_IMU_heading, delta_IMU_heading;
+    double IMU_heading = IMU->get_heading();
+    if (prev_IMU_heading > 359 && IMU_heading < 1)
+    {
+        delta_IMU_heading = (IMU - prev_IMU)
+    }
+    IMU->get_heading();
+}
+
 //method to update functions:
 void DriveTrain::update_odometry()
 {
@@ -152,7 +163,16 @@ void DriveTrain::update_odometry()
     double middle_encoder_distance = get_middle_encoder_distance();
     delta_middle_encoder_distance = middle_encoder_distance - prev_middle_encoder_distance;
 
-    double delta_alpha = compute_delta_alpha(delta_right_encoder_distance, delta_left_encoder_distance);
+    double delta_alpha;
+    if (is_IMU_odometry)
+    {
+        delta_alpha = compute_delta_alpha(delta_right_encoder_distance, delta_left_encoder_distance);
+    }
+    else
+    {
+        delta_alpha = compute_delta_alpha(delta_right_encoder_distance, delta_left_encoder_distance);
+    }
+
     alpha += delta_alpha;
 
     double Dlx = compute_delta_Dlx(delta_alpha, delta_middle_encoder_distance);
@@ -678,6 +698,7 @@ void DriveTrain::calibrate_IMU()
     {
         pros::delay(10);
     }
+    IMU->set_data_rate(5);
 }
 
 void filter_IMU()

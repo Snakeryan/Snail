@@ -17,11 +17,14 @@ class DriveTrain
     // Task that updates the odometry functions:
     pros::Mutex update_odometry_mutex;
 
-    // all data members of the DriveTrain class:
     double encoder_wheel_radius, wL, wR, wM, globalX, globalY, alpha, prev_alpha, prev_left_encoder_distance, delta_left_encoder_distance, prev_right_encoder_distance, delta_right_encoder_distance, prev_middle_encoder_distance, delta_middle_encoder_distance;
 
+    // flag for running odometry with and without the IMU:
+    bool is_IMU_odometry;
+
     //shared pointer to ensure that the update_odometry task(s) will never outlive the function
-    std::shared_ptr<pros::Task> odometry_update_task{nullptr};
+    std::shared_ptr<pros::Task>
+        odometry_update_task{nullptr};
 
     // motor/sensor parameters:
     pros::Motor *FL;
@@ -403,6 +406,8 @@ public:
     bool is_R_pot_bending();
 
     void calibrate_IMU();
+
+    double get_delta_IMU_heading();
 
     void stop_drive_motors();
 
