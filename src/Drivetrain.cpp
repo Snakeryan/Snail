@@ -139,17 +139,6 @@ double DriveTrain::convert_deg_to_rad(double deg)
     return (deg * pi) / 180;
 }
 
-double DriveTrain::get_delta_IMU_heading()
-{
-    double prev_IMU_heading, delta_IMU_heading;
-    double IMU_heading = IMU->get_heading();
-    if (prev_IMU_heading > 359 && IMU_heading < 1)
-    {
-        delta_IMU_heading = (IMU - prev_IMU)
-    }
-    IMU->get_heading();
-}
-
 //method to update functions:
 void DriveTrain::update_odometry()
 {
@@ -163,10 +152,14 @@ void DriveTrain::update_odometry()
     double middle_encoder_distance = get_middle_encoder_distance();
     delta_middle_encoder_distance = middle_encoder_distance - prev_middle_encoder_distance;
 
-    double delta_alpha;
+    double delta_alpha, delta_IMU_heading;
+
+    delta_IMU_heading = compute_angle_error(convert_deg_to_rad(IMU->get_heading()), prev_IMU_heading);
+    IMU_heading += delta_IMU_heading;
+
     if (is_IMU_odometry)
     {
-        delta_alpha = compute_delta_alpha(delta_right_encoder_distance, delta_left_encoder_distance);
+        delta_alpha = delta_IMU_heading;
     }
     else
     {
@@ -188,7 +181,13 @@ void DriveTrain::update_odometry()
     prev_right_encoder_distance = right_encoder_distance;
     prev_middle_encoder_distance = middle_encoder_distance;
     prev_alpha = alpha;
+    prev_IMU_heading = IMU_heading;
     update_odometry_mutex.give();
+}
+
+void DriveTrain::use_IMU_for_odometry(bool is_IMU_odometry)
+{
+    this->is_IMU_odometry = is_IMU_odometry;
 }
 
 void DriveTrain::set_current_global_position(double new_X, double new_Y, double new_alpha_in_degrees)
@@ -198,7 +197,24 @@ void DriveTrain::set_current_global_position(double new_X, double new_Y, double 
     globalY = new_Y;
     prev_alpha = convert_deg_to_rad(new_alpha_in_degrees);
     alpha = prev_alpha;
+    prev_IMU_heading = convert_deg_to_rad(new_alpha_in_degrees);
+    IMU_heading = prev_IMU_heading;
     update_odometry_mutex.give();
+}
+
+void DriveTrain::set_alpha(double new_alpha_in_degrees)
+{
+    update_odometry_mutex.take(1000);
+    prev_IMU_heading = convert_deg_to_rad(new_alpha_in_degrees);
+    IMU_heading = prev_IMU_heading;
+    prev_alpha = convert_deg_to_rad(new_alpha_in_degrees);
+    alpha = prev_alpha;
+    update_odometry_mutex.give();
+}
+
+void DriveTrain::reset_odom()
+{
+    set_current_global_position(0, 0, 0);
 }
 
 void DriveTrain::turn_to_point(double destX, double destY)
@@ -306,7 +322,7 @@ double DriveTrain::compute_angle_error(double target, double current_angle)
     }
 }
 
-void DriveTrain::run_Xdrive(double T, double S, double R)
+void DriveTrain::run_Xdrive(double T, double S, double R, double K_constant)
 {
     double P1 = compute_P1(T);
     double P2 = compute_P2(T);
@@ -319,22 +335,23 @@ void DriveTrain::run_Xdrive(double T, double S, double R)
     // pros::lcd::set_text(5, "MAX(std::abs(P1), std::abs(P2)): " + std::to_string(MAX(std::abs(P1), std::abs(P2))));
 
     //how much power to apply to each motor:
-    compute_FL_motor_speed(P2, s, 1, R, 2);
-    compute_FR_motor_speed(P1, s, 1, R, 2);
-    compute_BL_motor_speed(P1, s, 1, R, 2);
-    compute_BR_motor_speed(P2, s, 1, R, 2);
+    compute_FL_motor_speed(P2, s, K_constant, R, 2);
+    compute_FR_motor_speed(P1, s, K_constant, R, 2);
+    compute_BL_motor_speed(P1, s, K_constant, R, 2);
+    compute_BR_motor_speed(P2, s, K_constant, R, 2);
 }
 
-void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, int point_type, double rotational_KP, const std::function<void()> &trigger, double trigger_distance, double timeout)
+void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, int point_type, double rotational_KP, bool use_limited_acceleration, const std::function<void()> &trigger, double trigger_distance, double timeout)
 {
     //configuration:
-
     //hyperparameters:
     const double translational_KP = 2;
     const double motors_on_off = 1;
     const double K_constant = 1;
     const double multiplier = 2;
     const double acceptable_angle_error = 1;
+    const double speed_up_time = 250;
+    const bool use_motion_profiling = false;
 
     double slow_down_distance_threshold = 18;
     double acceptable_distance_error = 0.2;
@@ -402,10 +419,24 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
             S = 1;
         }
 
+        //motion profiling
+        if (use_motion_profiling)
+        {
+            double millis = pros::millis() - start_time;
+            if (speed_up_time != 0 && millis < speed_up_time && abs(current_distance_error) > slow_down_distance_threshold)
+            {
+                S = millis / speed_up_time;
+                if (use_limited_acceleration)
+                {
+                    // K_constant = S;
+                }
+            }
+        }
+
         //Target coordinate plane offset:
         double T = atan2(error_in_Y, error_in_X) + alpha;
 
-        run_Xdrive(T, S, R);
+        run_Xdrive(T, S, R, K_constant);
 
         //debugging:
         // pros::lcd::set_text(3, "distance error: " + std::to_string(current_distance_error));
@@ -703,6 +734,11 @@ void DriveTrain::calibrate_IMU()
 
 void filter_IMU()
 {
+}
+
+double DriveTrain::get_IMU_heading()
+{
+    return convert_rad_to_deg_wraped(IMU_heading);
 }
 
 void DriveTrain::setup_sensors()

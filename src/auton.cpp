@@ -10,8 +10,10 @@ void run_homerow()
 
 void test_mode()
 {
+    drivetrain.use_IMU_for_odometry(false);
     drivetrain.set_current_global_position(0, 0, 0);
-    drivetrain.turn_to_point(10, 0);
+    drivetrain.drive_to_point(30, 0, 0);
+    drivetrain.drive_to_point(0, 0, 0);
 }
 
 void run_field_sides()
@@ -63,10 +65,11 @@ void run_field_sides()
 
 void run_skills()
 {
-    if (false)
+    if (true)
     {
         test_mode();
         drivetrain.stop_drive_motors();
+        return;
     }
 
     // run_field_sides();

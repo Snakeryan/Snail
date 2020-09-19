@@ -15,7 +15,7 @@ void display_data()
 	{
 
 		backboard = vision_sensor.get_by_size(0);
-		pros::lcd::set_text(7, "(X, Y): (" + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")");
+		pros::lcd::set_text(1, "(X, Y): (" + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")");
 		pros::lcd::set_text(2, "alpha: " + std::to_string(drivetrain.get_alpha_in_degrees()));
 		// pros::lcd::set_text(2, "collision light: " + std::to_string(collision_light_sensor.get_value_calibrated()));
 		// pros::lcd::set_text(3, std::to_string((int)FL.get_temperature()) + "; " + std::to_string((int)FR.get_temperature()) + "; " + std::to_string((int)BL.get_temperature()) + "; " + std::to_string((int)BR.get_temperature()));
@@ -23,16 +23,17 @@ void display_data()
 		// pros::lcd::set_text(5, "light: " + std::to_string(scorer.get_light_calibrated_value()));
 		// pros::lcd::set_text(6, "upper_balls: " + std::to_string(scorer.get_upper_balls_counted()));
 		// pros::lcd::set_text(6, "exposure: " + std::to_string(vision_sensor.get_exposure()));
-		pros::lcd::set_text(4, "i: " + std::to_string(IMU.get_heading()) + "a: " + std::to_string(drivetrain.get_alpha_in_degrees()));
+		// pros::lcd::set_text(4, "i: " + std::to_string(IMU.get_heading()) + "a: " + std::to_string(drivetrain.get_alpha_in_degrees()));
 
-		double calculation = (drivetrain.get_left_encoder_distance() - drivetrain.get_right_encoder_distance()) / (20 * pi);
-		// pros::lcd::set_text(6, "L_encoder: " + std::to_string(drivetrain.get_left_encoder_distance()));
-		// pros::lcd::set_text(7, "R_encoder: " + std::to_string(drivetrain.get_right_encoder_distance()));
+		pros::lcd::set_text(4, "i norm: " + std::to_string(IMU.get_heading()) + "i odom: " + std::to_string(drivetrain.get_IMU_heading()));
 
-
+		// double calculation = (drivetrain.get_left_encoder_distance() - drivetrain.get_right_encoder_distance()) / (20 * pi);
+		pros::lcd::set_text(5, "M_encoder: " + std::to_string(drivetrain.get_middle_encoder_distance()));
+		pros::lcd::set_text(6, "L_encoder: " + std::to_string(drivetrain.get_left_encoder_distance()));
+		pros::lcd::set_text(7, "R_encoder: " + std::to_string(drivetrain.get_right_encoder_distance()));
 
 		// pros::lcd::set_text(6, "pot_L: " + std::to_string(left_pot.get_value()));
-		// pros::lcd::set_text(5, "`pot_R :" + std::to_string(right_pot.get_value()));
+		// pros::lcd::set_text(5, "pot_R :" + std::to_string(right_pot.get_value()));
 
 		// pros::lcd::set_text(1, "vision X coordinate:" + std::to_string(backboard.x_middle_coord));
 
@@ -206,7 +207,7 @@ void run_macros()
 	{
 		scorer.set_flywheel(0);
 	}
-		if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B))
+	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B))
 	{
 		printf("drivetrain.drive_to_point(%.2f, %.2f, %.2f, false, true);\n", drivetrain.get_globalX(), drivetrain.get_globalY(), drivetrain.get_alpha_in_degrees());
 		// (4, "drivetrain.drive_to_point( " + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")" + std::to_string(drivetrain.get_alpha_in_degrees()));
@@ -223,6 +224,7 @@ void opcontrol()
 {
 	// pros::lcd::initialize();
 	// drivetrain.set_current_global_position(16.077751092179696, 63.107507307056174, 90);
+	drivetrain.set_current_global_position(0, 0, 0);
 	while (true)
 	{
 		drivetrain.driver_control(controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y),

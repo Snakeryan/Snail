@@ -17,7 +17,9 @@ class DriveTrain
     // Task that updates the odometry functions:
     pros::Mutex update_odometry_mutex;
 
-    double encoder_wheel_radius, wL, wR, wM, globalX, globalY, alpha, prev_alpha, prev_left_encoder_distance, delta_left_encoder_distance, prev_right_encoder_distance, delta_right_encoder_distance, prev_middle_encoder_distance, delta_middle_encoder_distance;
+    double encoder_wheel_radius, wL, wR, wM, globalX, globalY, alpha, prev_alpha, IMU_heading, prev_IMU_heading, prev_left_encoder_distance, delta_left_encoder_distance, prev_right_encoder_distance, delta_right_encoder_distance, prev_middle_encoder_distance, delta_middle_encoder_distance = 0;
+
+    // SimpleKalmanFilter heading_filter = simplekalmanfilter(1, 1, 0.01);
 
     // flag for running odometry with and without the IMU:
     bool is_IMU_odometry;
@@ -46,7 +48,7 @@ class DriveTrain
     pros::ADIAnalogIn *left_pot;
     pros::ADIAnalogIn *right_pot;
 
-    void run_Xdrive(double T, double S, double R);
+    void run_Xdrive(double T, double S, double R, double K_constant = 1);
     /**
  *        this method takes inches as its units and it uses this formula: (delta_left_distance - delta_right_distance) / (wL + wR)
  * \param delta_right_distance
@@ -153,7 +155,7 @@ class DriveTrain
  * \param use_motor
  *       a debugging parameter that turns the motors off if it is zero and on if it is one (one is the default parameter)
 */
-    void compute_FL_motor_speed(double P2, double s, double S, double R, double multiplier);
+    void compute_FL_motor_speed(double P2, double s, double K_constant, double R, double multiplier);
 
     /** 
  *        this is the formula used by this method: ((P1 / s) * (1 - abs(R)) - R * K_constant) * -1
@@ -170,7 +172,7 @@ class DriveTrain
  * \param use_motor
  *       a debugging parameter that turns the motors off if it is zero and on if it is one (one is the default parameter)
 */
-    void compute_FR_motor_speed(double P1, double s, double S, double R, double multiplier);
+    void compute_FR_motor_speed(double P1, double s, double K_constant, double R, double multiplier);
 
     /** 
  *        this is the formula used by this method: ((P1 / s) * (1 - abs(R)) + R * K_constant)
@@ -187,7 +189,7 @@ class DriveTrain
  * \param use_motor
  *       a debugging parameter that turns the motors off if it is zero and on if it is one (one is the default parameter)
 */
-    void compute_BL_motor_speed(double P1, double s, double S, double R, double multiplier);
+    void compute_BL_motor_speed(double P1, double s, double K_constant, double R, double multiplier);
 
     /** 
  *        this is the formula used by this method: ((P2 / s) * (1 - abs(R)) - R * K_constant) * -1
@@ -204,7 +206,7 @@ class DriveTrain
  * \param use_motor
  *       a debugging parameter that turns the motors off if it is zero and on if it is one (one is the default parameter)
 */
-    void compute_BR_motor_speed(double P2, double s, double S, double R, double multiplier);
+    void compute_BR_motor_speed(double P2, double s, double K_constant, double R, double multiplier);
 
     /** 
  *        main funcition for odometry, as it is where all of the variables are updated and absolute coordinates are calculated
@@ -258,6 +260,7 @@ class DriveTrain
     void set_turn(double turn);
 
     /**
+     * always returns a value between 0-2π
  * \param turn
  *        the speed at which you want the robot to turn (12 is the maximum speed)
 */
@@ -299,7 +302,7 @@ public:
  * \param timeout
  *       the maximum amount of time the robot can spend driving to a point (has default of 10000 milliseconds`)
 */
-    void drive_to_point(double tX, double tY, double target_angle_in_degrees, int point_type = 2, double rotational_KP = 1, const std::function<void()> &trigger = 0, double trigger_distance = 3, double timeout = 10000);
+    void drive_to_point(double tX, double tY, double target_angle_in_degrees, int point_type = 2, double rotational_KP = 1, bool use_limited_acceleration = true, const std::function<void()> &trigger = 0, double trigger_distance = 3, double timeout = 10000);
 
     /** 
  *        this method changes where the robot thinks it is with respect to its coordinates and heading (only use this if you are starting in a new position)
@@ -407,7 +410,15 @@ public:
 
     void calibrate_IMU();
 
-    double get_delta_IMU_heading();
+    double get_delta_IMU_heading(double prev_IMU_heading);
+
+    double get_IMU_heading();
+
+    void set_alpha(double new_alpha_in_degrees);
+
+    void use_IMU_for_odometry(bool is_IMU_odometry);
+
+    void reset_odom();
 
     void stop_drive_motors();
 
