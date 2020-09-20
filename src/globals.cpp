@@ -30,7 +30,7 @@ pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
 //Sensors
 pros::ADIEncoder encoderL('C', 'D', false);
-pros::ADIEncoder encoderM('G', 'H', true);
+pros::ADIEncoder encoderM('G', 'H', false);
 pros::ADIEncoder encoderR('E', 'F', true);
 
 pros::Imu IMU(10);

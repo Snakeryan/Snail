@@ -341,7 +341,7 @@ void DriveTrain::run_Xdrive(double T, double S, double R, double K_constant)
     compute_BR_motor_speed(P2, s, K_constant, R, 2);
 }
 
-void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, int point_type, double rotational_KP, bool use_limited_acceleration, const std::function<void()> &trigger, double trigger_distance, double timeout)
+void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, int point_type, double rotational_KP, const std::function<void()> &trigger, double trigger_distance, double timeout)
 {
     //configuration:
     //hyperparameters:
@@ -426,10 +426,10 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
             if (speed_up_time != 0 && millis < speed_up_time && abs(current_distance_error) > slow_down_distance_threshold)
             {
                 S = millis / speed_up_time;
-                if (use_limited_acceleration)
-                {
-                    // K_constant = S;
-                }
+                // if (use_limited_acceleration)
+                // {
+                //     // K_constant = S;
+                // }
             }
         }
 

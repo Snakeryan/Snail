@@ -10,10 +10,29 @@ void run_homerow()
 
 void test_mode()
 {
-    drivetrain.use_IMU_for_odometry(false);
-    drivetrain.set_current_global_position(0, 0, 0);
-    drivetrain.drive_to_point(30, 0, 0);
-    drivetrain.drive_to_point(0, 0, 0);
+
+    // drivetrain.use_IMU_for_odometry(false);
+    // drivetrain.set_current_global_position(0, 0, 0);
+    // drivetrain.drive_to_point(30, 0, 0);
+    // drivetrain.drive_to_point(0, 0, 0);
+    // drivetrain.stop_drive_motors();
+
+    // drivetrain.use_IMU_for_odometry(false);
+    // drivetrain.set_current_global_position(0, 0, 0);
+    // drivetrain.drive_to_point(0, 30, 180);
+    // drivetrain.drive_to_point(0, 0, 0);
+    // drivetrain.stop_drive_motors();
+    //     drivetrain.use_IMU_for_odometry(true);
+    //     drivetrain.set_current_global_position(0, 0, 0);
+    //     drivetrain.drive_to_point(30, 0, 0);
+    //     drivetrain.drive_to_point(0, 0, 0);
+    //     drivetrain.stop_drive_motors();
+    // drivetrain.use_IMU_for_odometry(true);
+    // drivetrain.set_current_global_position(0, 0, 0);
+    // drivetrain.drive_to_point(0, 30, 180);
+    // drivetrain.drive_to_point(0, 0, 0);
+    // drivetrain.stop_drive_motors();
+    // }
 }
 
 void run_field_sides()
@@ -31,15 +50,16 @@ void run_field_sides()
     drivetrain.drive_to_point(-12.43, -14.16, 315.90, 2, 3);
 
     // =========== COLLECT BALL D ===========
-    drivetrain.drive_to_point(-20.27, -35.57, 225.24, 2, 3);
+    drivetrain.drive_to_point(-19.80, -30.51, 227.21, 2, 3);
+    drivetrain.drive_to_point(-33.01, -44.27, 226.81, 2, 3);
 
+    drivetrain.point_turn_PID(312, false);
     // =========== DRIVE TO TOWER THREE ===========
-    drivetrain.drive_to_point(-33.14, -44.95, 319.14, 2, 1);
-    // drivetrain.drive_to_point(-36.57, -41.71, 319.24, 2, 3, NULL, 0, 1500);
+    drivetrain.drive_to_point(-36.51, -40.24, 311.58, 2, 1, NULL, 0, 1500);
     drivetrain.stop_drive_motors();
 
     // =========== RESET GLOBAL POSITION ===========
-    drivetrain.center_on_tower_with_bumper(319.24, false, 1500);
+    drivetrain.center_on_tower_with_bumper(312, false, 500);
     pros::delay(200);
     drivetrain.set_current_global_position(0, 0, 0);
 
@@ -53,27 +73,27 @@ void run_field_sides()
     drivetrain.drive_to_point(-33.70, 5.17, 2.95, 2, 3);
 
     // =========== DRIVE TO TOWER FOUR ===========
-    drivetrain.drive_to_point(-37.68, 5.32, 331.42, 1, 1);
-    drivetrain.drive_to_point(-47.49, 5.96, 320.52, 1, 1);
-    drivetrain.drive_to_point(-52.83, 8.43, 323.76, 2, 1, NULL, 0, 2000);
+    drivetrain.drive_to_point(-44.73, 5.74, 339.86, 1, 1);
+    drivetrain.drive_to_point(-53.46, 2.36, 321.79, 2, 1);
+
+    drivetrain.stop_drive_motors();
 
     // =========== RESET GLOBAL POSITION ===========
-    drivetrain.center_on_tower_with_bumper(317, true, 1500);
+    drivetrain.center_on_tower_with_bumper(319, true, 1500);
     pros::delay(200);
     drivetrain.set_current_global_position(0, 0, 0);
 }
 
 void run_skills()
 {
-    if (true)
-    {
-        test_mode();
-        drivetrain.stop_drive_motors();
-        return;
-    }
+    // if (true)
+    // {
+    //     test_mode();
+    //     drivetrain.stop_drive_motors();
+    // //     return;
+    // // }
 
-    // run_field_sides();
-
+    run_field_sides();
     drivetrain.set_current_global_position(0, 0, 0);
 
     scorer.set_intakes(127);
@@ -88,26 +108,38 @@ void run_skills()
 
     // =========== COLLECT BALL F ===========
 
-    drivetrain.drive_to_point(1.14, -24.35, 314, 2, 1);
+    drivetrain.drive_to_point(-1.11, -25.61, 311.77, 2, 1);
 
     // =========== WAYPOINT TO TOWER FIVE ===========
     drivetrain.drive_to_point(-27.59, -47.02, 313.64, 2, 3);
 
     // =========== DRIVE TO TOWER FIVE ===========
-    drivetrain.drive_to_point(-30.10, -44.24, 311.87, 0, 3);
-
-    // =========== BACK OUT OF TOWER FIVE ===========
-
-    // =========== COLLECT BALL G ===========
-
-    // =========== DRIVE TO TOWER SIX ===========
+    drivetrain.drive_to_point(-31.42, -47.05, 313.34, 2, 3);
 
     // =========== RESET GLOBAL POSITION ===========
-    drivetrain.center_on_tower_with_bumper(312, true, 1000);
+    drivetrain.center_on_tower_with_bumper(313, true, 1000);
     pros::delay(200);
-    // drivetrain.set_current_global_position(0, 0, 0);
-
+    drivetrain.reset_odom();
     drivetrain.stop_drive_motors();
+    // return;
+
+    // =========== BACK OUT OF TOWER FIVE ===========
+    drivetrain.drive_to_point(-10.79, -20.79, 307.16, 2, 1);
+
+    // =========== COLLECT BALL G ===========
+    drivetrain.drive_to_point(-21.85, -15.82, 313.25, 2, 1, NULL, 0, 2000);
+
+    // =========== DRIVE TO TOWER SIX ===========
+    drivetrain.drive_to_point(-53.06, 1.92, 315.90, 2, 1, NULL, 0, 2000);
+
+    // =========== RESET GLOBAL POSITION ===========
+    drivetrain.center_on_tower_with_bumper(316, true, 1000);
+    drivetrain.set_current_global_position(0, 0, 0);
+    drivetrain.stop_drive_motors();
+
+    run_field_sides();
+    drivetrain.stop_drive_motors();
+    
 }
 
 /**
