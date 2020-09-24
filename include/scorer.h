@@ -11,13 +11,9 @@ class Scorer
     std::shared_ptr<pros::Task> intake_manager_task{nullptr};
 
     // counters for the balls entering and exiting our loop and upper balls:
-    int lower_balls_counted, upper_balls_counted = 0;
+    int lower_balls_counted, upper_balls_counted, dispense_balls_counted = 0;
 
-    //calibrated value of the light sensor:
-    double prev_upper_light_value, prev_lower_limit_value, upper_prev_time, lower_prev_time, num_balls_to_score, num_balls_to_collect = 0;
-
-    //flag for dispensing
-    bool dispense_triggered;
+    double prev_light_value, prev_upper_light_value, prev_dispense_light_value, prev_lower_limit_value, upper_prev_time, dispense_prev_time, prev_time, lower_prev_time, num_balls_to_score, num_balls_to_collect, num_balls_to_dispense, num_balls_to_dispense_through_intakes = 0;
 
     //pointer objects of all of the motors that are not part of the drivetrain:
     pros::Motor *intakeleft;
@@ -35,6 +31,7 @@ class Scorer
     //pointers to the three-wire sensors:
     pros::ADIDigitalIn *lower_limit_switch;
     pros::ADIAnalogIn *upper_counter_light_sensor;
+    pros::ADIAnalogIn *dispense_counter_light_sensor;
 
     void manage_intakes();
     /**
@@ -46,6 +43,10 @@ class Scorer
  *        makes an upper ball counter with a light sensor (use this to know how many balls have exited the robot)
 */
     void run_upper_light_sensor();
+
+    void setup_light_counter(double light_sensor_threshold, double light_calibrated_value, double counter);
+
+    void run_dispense_light_sensor();
 
     /**
  *        puts run_upper_light_sensor() and run_lower_limit_switch() in a while true loop with a small task delay
@@ -95,7 +96,7 @@ public:
  * \param upper_counter_light_sensor
  *        address of the upper light sensor
 */
-    Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *indexer, pros::Motor *flywheel, pros::Vision *vision_sensor, pros::vision_signature_s_t *BLUE_BALL_SIGNATURE, pros::vision_signature_s_t *RED_BALL_SIGNATURE, pros::ADIDigitalIn *lower_limit_switch, pros::ADIAnalogIn *upper_counter_light_sensor);
+    Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *indexer, pros::Motor *flywheel, pros::Vision *vision_sensor, pros::vision_signature_s_t *BLUE_BALL_SIGNATURE, pros::vision_signature_s_t *RED_BALL_SIGNATURE, pros::ADIDigitalIn *lower_limit_switch, pros::ADIAnalogIn *upper_counter_light_sensor, pros::ADIAnalogIn *dispense_counter_light_sensor);
 
     /**
  *        makes all of the scorer threads
@@ -128,7 +129,9 @@ public:
  * \return
  *        the current value of the light sensor with the calibrated light sensor's value being zero
 */
-    double get_light_calibrated_value();
+    double get_upper_light_calibrated_value();
+
+    double get_dispense_light_calibrated_value();
 
     /**
  * \return
@@ -153,7 +156,9 @@ public:
     /**
  *        activates the dispensing flag (will automatically be turned off) and dispenses the balls within the robot
 */
-    void dispense();
+    void dispense_n_balls(double num_balls_to_dispense, bool is_intake_dispense = false);
+
+    void wait_until_number_of_balls_dispensed(int num_balls_to_dispense, bool is_intake_dispense = false);
 
     /**
  *        resets the lower and upper balls counted
@@ -165,6 +170,8 @@ public:
     double get_lower_balls_counted();
 
     double get_upper_balls_counted();
+
+    double get_dispense_balls_counted();
 
     void stop_motors();
 

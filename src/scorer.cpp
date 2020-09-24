@@ -1,16 +1,32 @@
 #include "Scorer.h"
 
-Scorer::Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *indexer, pros::Motor *flywheel, pros::Vision *vision_sensor, pros::vision_signature_s_t *BLUE_BALL_SIGNATURE, pros::vision_signature_s_t *RED_BALL_SIGNATURE, pros::ADIDigitalIn *lower_limit_switch, pros::ADIAnalogIn *upper_counter_light_sensor)
+Scorer::Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *indexer, pros::Motor *flywheel, pros::Vision *vision_sensor, pros::vision_signature_s_t *BLUE_BALL_SIGNATURE, pros::vision_signature_s_t *RED_BALL_SIGNATURE, pros::ADIDigitalIn *lower_limit_switch, pros::ADIAnalogIn *upper_counter_light_sensor, pros::ADIAnalogIn *dispense_counter_light_sensor)
 {
     this->intakeleft = intakeleft;
     this->intakeright = intakeright;
     this->indexer = indexer;
     this->flywheel = flywheel;
     this->vision_sensor = vision_sensor;
-    // this->BLUE_BALL_SIGNATURE = BLUE_BALL_SIGNATURE;
-    // this->RED_BALL_SIGNATURE = RED_BALL_SIGNATURE;
     this->lower_limit_switch = lower_limit_switch;
     this->upper_counter_light_sensor = upper_counter_light_sensor;
+    this->dispense_counter_light_sensor = dispense_counter_light_sensor;
+}
+
+//will eventually want to move this to its own class
+void Scorer::setup_light_counter(double light_sensor_threshold, double light_calibrated_value, double counter)
+{
+    // makes the upper_balls_counted only go up when it is greater than 100 milliseconds:
+    double delay_time = 100;
+
+    // logic to make an upper counting system for balls that have exited our loop:
+    if ((light_calibrated_value > light_sensor_threshold && prev_light_value < light_sensor_threshold) && std::abs(prev_time - pros::millis()) > delay_time)
+    {
+        counter++;
+        prev_time = pros::millis();
+    }
+
+    // setting the previous light value:
+    prev_light_value = light_calibrated_value;
 }
 
 void Scorer::run_lower_limit_switch()
@@ -35,28 +51,48 @@ void Scorer::run_upper_light_sensor()
     double delay_time = 100;
 
     // value that the light sensor crosses to know if a ball has exited its field of detection:
-    double light_sensor_threshold = -500;
+    double light_sensor_threshold = 1200;
 
     // logic to make an upper counting system for balls that have exited our loop:
-    if ((get_light_calibrated_value() > light_sensor_threshold && prev_upper_light_value < light_sensor_threshold) && std::abs(upper_prev_time - pros::millis()) > delay_time)
+    if ((get_upper_light_calibrated_value() > light_sensor_threshold && prev_upper_light_value < light_sensor_threshold) && std::abs(upper_prev_time - pros::millis()) > delay_time)
     {
         upper_balls_counted++;
         upper_prev_time = pros::millis();
     }
 
     // setting the previous light value:
-    prev_upper_light_value = get_light_calibrated_value();
+    prev_upper_light_value = get_upper_light_calibrated_value();
+}
+
+void Scorer::run_dispense_light_sensor()
+{
+    // makes the upper_balls_counted only go up when it is greater than 100 milliseconds:
+    double delay_time = 100;
+
+    // value that the light sensor crosses to know if a ball has exited its field of detection:
+    double light_sensor_threshold = 1600;
+
+    // logic to make an upper counting system for balls that have exited our loop:
+    if ((get_dispense_light_calibrated_value() > light_sensor_threshold && prev_dispense_light_value < light_sensor_threshold) && std::abs(dispense_prev_time - pros::millis()) > delay_time)
+    {
+        dispense_balls_counted++;
+        dispense_prev_time = pros::millis();
+    }
+
+    // setting the previous light value:
+    prev_dispense_light_value = get_dispense_light_calibrated_value();
 }
 
 void Scorer::manage_indexer_and_flywheel()
 {
-    if (dispense_triggered)
+    if (num_balls_to_dispense != 0)
     {
-        set_indexers(-127);
-        wait_until_number_of_lower_balls_counted(lower_balls_counted + 1);
+        // set_indexers(-127);
+        // wait_until_number_of_lower_balls_counted(lower_balls_counted + 1);
         set_indexers(127);
         set_flywheel(-127);
-        dispense_triggered = false;
+        wait_until_number_of_balls_dispensed(num_balls_to_dispense);
+        num_balls_to_dispense = 0;
     }
 
     if (num_balls_to_score != 0)
@@ -65,7 +101,7 @@ void Scorer::manage_indexer_and_flywheel()
         num_balls_to_score = 0;
     }
 
-    if (num_balls_to_collect != 0 && !dispense_triggered)
+    if (num_balls_to_collect != 0 && num_balls_to_dispense == 0)
     {
         set_indexers(127);
     }
@@ -86,21 +122,32 @@ void Scorer::start_auton_sensors_update_thread()
     {
         run_upper_light_sensor();
         run_lower_limit_switch();
+        run_dispense_light_sensor();
         pros::Task::delay(20);
     }
 }
 
 void Scorer::manage_intakes()
 {
-    if (num_balls_to_collect != 0)
+    if (num_balls_to_collect != 0 && num_balls_to_dispense_through_intakes == 0)
     {
         set_intakes(127);
-        wait_until_number_of_lower_balls_counted(num_balls_to_collect);
+        wait_until_number_of_lower_balls_counted(lower_balls_counted + num_balls_to_collect);
         pros::delay(50);
         set_intakes(-63);
         pros::delay(100);
         set_intakes(0);
         num_balls_to_collect = 0;
+    }
+
+    if (num_balls_to_dispense_through_intakes != 0)
+    {
+        set_flywheel(-127);
+        set_indexers(-127);
+        pros::delay(100);
+        set_intakes(-127 / 5);
+        wait_until_number_of_balls_dispensed(num_balls_to_dispense_through_intakes, true);
+        num_balls_to_dispense_through_intakes = 0;
     }
 }
 
@@ -136,11 +183,6 @@ void Scorer::set_indexers(int indexer_power)
     indexer->move_voltage(indexer_power * 1000);
 }
 
-double Scorer::get_light_calibrated_value()
-{
-    return upper_counter_light_sensor->get_value_calibrated();
-}
-
 void Scorer::wait_until_number_of_uppper_balls_counted(int number_of_balls_passed)
 {
     while (upper_balls_counted < number_of_balls_passed)
@@ -164,9 +206,9 @@ void Scorer::score_in_goal_with_light(int num_balls)
 
     while (upper_balls_counted < num_balls)
     {
-        if (get_light_calibrated_value() < -500)
+        if (get_upper_light_calibrated_value() < 1200)
         {
-            set_indexers(-100);
+            set_indexers(0);
             pros::delay(50);
         }
         else
@@ -175,20 +217,43 @@ void Scorer::score_in_goal_with_light(int num_balls)
         }
         pros::delay(10);
     }
-    pros::delay(150);
+    pros::delay(250);
     set_flywheel(0);
     set_indexers(0);
 }
 
-void Scorer::dispense()
+void Scorer::dispense_n_balls(double num_balls_to_dispense, bool is_intake_dispense)
 {
-    dispense_triggered = true;
+    if (is_intake_dispense)
+    {
+        num_balls_to_dispense_through_intakes = num_balls_to_dispense;
+    }
+    else
+    {
+        this->num_balls_to_dispense = num_balls_to_dispense;
+    }
+}
+
+void Scorer::wait_until_number_of_balls_dispensed(int num_balls_to_dispense, bool is_intake_dispense)
+{
+    if (is_intake_dispense)
+    {
+        wait_until_number_of_lower_balls_counted(num_balls_to_dispense);
+    }
+    else
+    {
+        while (dispense_balls_counted < num_balls_to_dispense)
+        {
+            pros::delay(20);
+        }
+    }
 }
 
 void Scorer::reset_balls_counted()
 {
     upper_balls_counted = 0;
     lower_balls_counted = 0;
+    dispense_balls_counted = 0;
 }
 
 void Scorer::deploy_intakes()
@@ -230,6 +295,21 @@ double Scorer::get_lower_balls_counted()
 double Scorer::get_upper_balls_counted()
 {
     return upper_balls_counted;
+}
+
+double Scorer::get_dispense_balls_counted()
+{
+    return dispense_balls_counted;
+}
+
+double Scorer::get_dispense_light_calibrated_value()
+{
+    return dispense_counter_light_sensor->get_value_calibrated();
+}
+
+double Scorer::get_upper_light_calibrated_value()
+{
+    return upper_counter_light_sensor->get_value_calibrated();
 }
 
 Scorer::~Scorer()

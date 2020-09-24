@@ -426,7 +426,7 @@ public:
 
     void setup();
 
-    void center_on_tower_with_bumper(double angle, bool use_IMU, double timeout = 2000);
+    void center_on_tower_with_bumper(double angle, bool use_IMU, double timeout = 2000, bool use_pots = true);
 
     ~DriveTrain();
 };
