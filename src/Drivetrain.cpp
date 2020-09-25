@@ -482,11 +482,13 @@ bool DriveTrain::is_R_pot_bending()
 
 void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU, double timeout, bool use_pots)
 {
+    const double k_translation = 30;
+
     double L_pot_threshold = 700;
     double R_pot_threshold = 750;
     double prev_time = pros::millis();
-    PID_controller pot_L_controller(0.005, 0, 0, 1, 0);
-    PID_controller pot_R_controller(0.005, 0, 0, 1, 0);
+    PID_controller pot_L_controller(0.0005, 0, 0, 1, 0);
+    PID_controller pot_R_controller(0.0005, 0, 0, 1, 0);
     do
     {
         double L_pot_error = L_pot_threshold - left_pot->get_value();
@@ -505,39 +507,41 @@ void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU, 
 
         double L_bend_time, R_bend_time;
 
+        double added_bend_time = 200;
+
         if (L_pot_bend_detected)
         {
-            L_bend_time = 200 + pros::millis();
+            L_bend_time = added_bend_time + pros::millis();
         }
         if (R_pot_bend_detected)
         {
-            R_bend_time = 200 + pros::millis();
+            R_bend_time = added_bend_time + pros::millis();
         }
         
 
         if (L_bend_time > pros::millis())
         {
-            R = MIN((arc_length_error * 1) / (std::abs(L_pot_error * 0.01)), 1);
+            R = MIN((arc_length_error * 1) / k_translation, 1);
             S = pot_L_controller.compute(std::abs(L_pot_error));
             T = atan2(-10, 1);
         }
         else if (R_bend_time > pros::millis())
         {
-            R = MIN((arc_length_error * 1) / (std::abs(R_pot_error * 0.01)), 1);
+            R = MIN((arc_length_error * 1) / k_translation, 1);
             S = pot_R_controller.compute(std::abs(R_pot_error));
             T = atan2(-10, -1);
         }
 
         if (L_pot_bend_detected && R_pot_bend_detected)
         {
-            R = MIN((arc_length_error * 1) / 30, 1);
+            R = MIN((arc_length_error * 1) / k_translation, 1);
             S = 0.3;
             T = atan2(-10, ((std::abs(R_pot_error) / -std::abs(R_pot_error)) / 2) * -0.001);
         }
 
-        if (!R_pot_bend_detected && !(L_bend_time > pros::millis()))
+        if (!(R_bend_time > pros::millis()) && !(L_bend_time > pros::millis()))
         {
-            R = MIN((arc_length_error * 1) / 1000, 1);
+            R = MIN((arc_length_error * 1) / k_translation, 1);
             S = 0.3;
             T = atan2(10, 0);
         }
