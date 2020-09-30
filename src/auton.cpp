@@ -4,13 +4,38 @@
 #include "globals.h"
 #include "PID_controller.h"
 
+double stop_watch;
+
+double get_stop_watch()
+{
+    return stop_watch;
+}
+void start_stop_watch()
+{
+    while (true)
+    {
+        stop_watch = pros::millis() / 1000;
+    }
+}
+
 void run_homerow()
 {
 }
 
 void test_mode()
 {
-    drivetrain.center_on_tower_with_bumper(312, false, 2000);
+    drivetrain.reset_odom();
+    drivetrain.drive_to_point(0, 20, 180, 2, 3);
+    drivetrain.drive_to_point(0, 0, 0, 2, 3);
+
+    // drivetrain.drive_to_point(0, 20, 0);
+    // drivetrain.drive_to_point(0, 0, 0, 2, 3);
+
+    // drivetrain.drive_to_point(20, 0, 0, 2, 3);
+    // drivetrain.drive_to_point(0, 0, 0, 2, 3);
+
+    // drivetrain.drive_to_point(20, 0, 180, 2, 3);
+    // drivetrain.drive_to_point(0, 0, 0, 2, 3);
 }
 
 void run_field_sides()
@@ -169,7 +194,7 @@ void run_blue_front()
     drivetrain.drive_to_point(-21.85, -15.82, 313.25, 2, 1, NULL, 0, 2000);
 
     // =========== DRIVE TO TOWER SIX ===========
-    drivetrain.drive_to_point(-52.36, -0.38, 318.15, 2, 1, NULL, 0, 5000);
+    drivetrain.drive_to_point(-53.91, 0.11, 314.31, 2, 3, NULL, 0, 3000);
 
     // =========== SCORE AND COLLECT IN TOWER SIX ===========
     scorer.reset_balls_counted();
@@ -239,14 +264,13 @@ void run_skills_start()
 
     // =========== WAYPOINT TO BALL A ===========
     drivetrain.drive_to_point(
-        16.74, -10.99, 222.49, 1, 3, []() {scorer.set_indexers(127); scorer.set_flywheel(0); scorer.set_intakes(-127);}, 10);
+        16.74, -10.99, 222.49, 1, 3, []() {scorer.set_indexers(-127); scorer.set_intakes(127); }, 5);
 
-    scorer.set_intakes(127);
-    scorer.set_indexers(-127);
+    scorer.set_indexers(127);
 
     // =========== COLLECT TO BALL A ===========
     drivetrain.drive_to_point(
-        11.32, -17.18, 224.36, 2, 3, []() { scorer.set_indexers(127); }, 4, 3000);
+        11.32, -17.18, 224.36, 2, 3, NULL, 0, 3000);
 
     scorer.set_intakes(0); //DELETE LATER
 
@@ -283,6 +307,8 @@ void run_skills()
     run_field_sides();
 
     run_skills_end();
+
+    pros::lcd::set_text(7, "time taken: " + std::to_string(get_stop_watch()));
 }
 
 /**

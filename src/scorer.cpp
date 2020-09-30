@@ -83,8 +83,23 @@ void Scorer::run_dispense_light_sensor()
     prev_dispense_light_value = get_dispense_light_calibrated_value();
 }
 
+void Scorer::deploy_fangs()
+{
+    position_fangs = true;
+}
+
 void Scorer::manage_indexer_and_flywheel()
 {
+    if (position_fangs)
+    {
+        set_indexers(127);
+        pros::delay(100);
+        set_indexers(-127);
+        pros::delay(100);
+        set_indexers(0);
+        position_fangs = false;
+    }
+
     if (num_balls_to_dispense != 0)
     {
         // set_indexers(-127);
@@ -127,8 +142,21 @@ void Scorer::start_auton_sensors_update_thread()
     }
 }
 
+void Scorer::deploy_intakes()
+{
+    position_intakes = true;
+}
+
 void Scorer::manage_intakes()
 {
+    if (position_intakes)
+    {
+        set_intakes(-127);
+        pros::delay(500);
+        set_intakes(127);
+        position_intakes = false;
+    }
+
     if (num_balls_to_collect != 0 && num_balls_to_dispense_through_intakes == 0)
     {
         set_intakes(127);
@@ -185,7 +213,8 @@ void Scorer::set_indexers(int indexer_power)
 
 void Scorer::wait_until_number_of_uppper_balls_counted(int number_of_balls_passed)
 {
-    while (upper_balls_counted < number_of_balls_passed)
+    double timeout = pros::millis() + (abs(number_of_balls_passed - upper_balls_counted) * 1000);
+    while (upper_balls_counted < number_of_balls_passed && pros::millis() < timeout)
     {
         pros::delay(20);
     }
@@ -193,7 +222,8 @@ void Scorer::wait_until_number_of_uppper_balls_counted(int number_of_balls_passe
 
 void Scorer::wait_until_number_of_lower_balls_counted(int number_of_balls_passed)
 {
-    while (lower_balls_counted < number_of_balls_passed)
+    double timeout = pros::millis() + (abs(number_of_balls_passed - upper_balls_counted) * 1000);
+    while (lower_balls_counted < number_of_balls_passed && pros::millis() < timeout)
     {
         pros::delay(20);
     }
@@ -254,15 +284,6 @@ void Scorer::reset_balls_counted()
     upper_balls_counted = 0;
     lower_balls_counted = 0;
     dispense_balls_counted = 0;
-}
-
-void Scorer::deploy_intakes()
-{
-    set_intakes(127);
-    pros::delay(1000);
-    set_intakes(0);
-    pros::delay(1000);
-    set_intakes(127);
 }
 
 void Scorer::stop_motors()

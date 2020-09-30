@@ -154,7 +154,10 @@ void DriveTrain::update_odometry()
 
     double delta_alpha, delta_IMU_heading;
 
-    delta_IMU_heading = compute_angle_error(convert_deg_to_rad(IMU->get_heading()), prev_IMU_heading);
+    if (!IMU->is_calibrating())
+    {
+        delta_IMU_heading = compute_angle_error(convert_deg_to_rad(IMU->get_heading()), prev_IMU_heading);
+    }
     IMU_heading += delta_IMU_heading;
 
     if (is_IMU_odometry)
@@ -494,8 +497,8 @@ void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU, 
         double L_pot_error = L_pot_threshold - left_pot->get_value();
         double R_pot_error = R_pot_threshold - right_pot->get_value();
 
-        bool L_pot_bend_detected = use_pots? is_L_pot_bending() : false;
-        bool R_pot_bend_detected = use_pots? is_R_pot_bending() : false;
+        bool L_pot_bend_detected = use_pots ? is_L_pot_bending() : false;
+        bool R_pot_bend_detected = use_pots ? is_R_pot_bending() : false;
 
         double angle_error = compute_angle_error(convert_deg_to_rad(target_angle), use_IMU ? convert_deg_to_rad(get_IMU_heading()) : get_constrained_alpha());
         double arc_length_error = angle_error * wR;
@@ -517,7 +520,6 @@ void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU, 
         {
             R_bend_time = added_bend_time + pros::millis();
         }
-        
 
         if (L_bend_time > pros::millis())
         {

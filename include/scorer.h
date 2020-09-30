@@ -24,6 +24,9 @@ class Scorer
     //pointer object of the vision sensor:
     pros::Vision *vision_sensor;
 
+    // flag for deploying the bumper's fangs
+    bool position_fangs, position_intakes;
+
     //pointer objects of all of our vision signatures:
     pros::vision_signature_s_t *BLUE_BALL_SIGNATURE;
     pros::vision_signature_s_t *RED_BALL_SIGNATURE;
@@ -174,6 +177,8 @@ public:
     double get_dispense_balls_counted();
 
     void stop_motors();
+
+    void deploy_fangs();
 
     void setup();
 

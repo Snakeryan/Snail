@@ -7,6 +7,7 @@
 #include "autoSelect/selection.h"
 #include "SimpleKalmanFilter.h"
 
+
 void display_data()
 {
 	pros::vision_object_s_t backboard = vision_sensor.get_by_size(0);
@@ -16,7 +17,7 @@ void display_data()
 
 		backboard = vision_sensor.get_by_size(0);
 		pros::lcd::set_text(1, "(X, Y): (" + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")");
-		pros::lcd::set_text(2, "alpha: " + std::to_string(drivetrain.get_alpha_in_degrees()));
+		// pros::lcd::set_text(2, "alpha: " + std::to_string(drivetrain.get_alpha_in_degrees()));
 		// pros::lcd::set_text(2, "collision light: " + std::to_string(collision_light_sensor.get_value_calibrated()));
 		pros::lcd::set_text(7, std::to_string((int)FL.get_temperature()) + "; " + std::to_string((int)FR.get_temperature()) + "; " + std::to_string((int)BL.get_temperature()) + "; " + std::to_string((int)BR.get_temperature()));
 		pros::lcd::set_text(0, std::to_string((int)indexer.get_temperature()) + "; " + std::to_string((int)flywheel.get_temperature()));
@@ -27,13 +28,14 @@ void display_data()
 
 		pros::lcd::set_text(4, "i norm: " + std::to_string(IMU.get_heading()) + "i odom: " + std::to_string(drivetrain.get_IMU_heading()));
 
-		// double calculation = (drivetrain.get_left_encoder_distance() - drivetrain.get_right_encoder_distance()) / (20 * pi);
+		double calculation = (drivetrain.get_left_encoder_distance() - drivetrain.get_right_encoder_distance()) / (20 * pi);
 		// pros::lcd::set_text(5, "M_encoder: " + std::to_string(drivetrain.get_middle_encoder_distance()));
 		// pros::lcd::set_text(6, "L_encoder: " + std::to_string(drivetrain.get_left_encoder_distance()));
 		// pros::lcd::set_text(7, "R_encoder: " + std::to_string(drivetrain.get_right_encoder_distance()));
-		pros::lcd::set_text(6, "pot_L: " + std::to_string(left_pot.get_value()));
+		// pros::lcd::set_text(2, "calculation: " + std::to_string(calculation));
+		// pros::lcd::set_text(6, "pot_L: " + std::to_string(left_pot.get_value()));
 
-		pros::lcd::set_text(5, "upper light: " + std::to_string(scorer.get_upper_light_calibrated_value()));
+		// pros::lcd::set_text(5, "upper light: " + std::to_string(scorer.get_upper_light_calibrated_value()));
 
 		// pros::lcd::set_text(6, "pot_L: " + std::to_string(left_pot.get_value()));
 		// pros::lcd::set_text(5, "pot_R :" + std::to_string(right_pot.get_value()));
@@ -98,6 +100,7 @@ void initialize()
 	drivetrain.setup();
 	pros::lcd::initialize();
 	pros::Task display_data_task(display_data);
+	pros::Task stop_watch(start_stop_watch);
 	pros::lcd::register_btn1_cb(on_center_button);
 	display_auton_mode();
 	calibrate_sensors();
@@ -222,6 +225,19 @@ void run_macros()
 	{
 		printf("drivetrain.drive_to_point(%.2f, %.2f, %.2f, false, false);\n", drivetrain.get_globalX(), drivetrain.get_globalY(), drivetrain.get_alpha_in_degrees());
 		pros::delay(200);
+	}
+	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A))
+	{
+		controller.print(0, 0, "(%.2f, %.2f)", drivetrain.get_globalX(), drivetrain.get_globalY());
+		pros::delay(50);
+		controller.print(1, 0, "A: %.2f I: %.2f", drivetrain.get_alpha_in_degrees(), drivetrain.get_IMU_heading());
+		pros::delay(50);
+		controller.print(2, 0, "Battery: %.2f", controller.get_battery_level());
+		pros::delay(50);
+	}
+	else
+	{
+		controller.clear();
 	}
 }
 
