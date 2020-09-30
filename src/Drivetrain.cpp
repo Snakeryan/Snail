@@ -19,7 +19,7 @@ const T &constrain(const T &x, const T &a, const T &b)
         return x;
 }
 
-DriveTrain::DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot, pros::ADIAnalogIn *collision_light_sensor)
+DriveTrain::DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot)
 {
     this->encoder_wheel_radius = encoder_wheel_radius;
     this->wL = wL;
@@ -463,10 +463,23 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
     pros::lcd::set_text(0, "drive_to_point exited");
 }
 
-bool DriveTrain::collision_detected()
+bool DriveTrain::collision_detected(const int encoder_readings_to_average)
 {
-    double light_sensor_threshold;
-    return (delta_left_encoder_distance == 0 && delta_right_encoder_distance == 0 && delta_middle_encoder_distance == 0);
+    double readings[encoder_readings_to_average];
+    double reading_sum;
+    for (int i = encoder_readings_to_average - 1; i > 0; i--)
+    {
+        readings[i] = readings[i - 1];
+    }
+
+    readings[0] = delta_middle_encoder_distance + delta_left_encoder_distance + delta_right_encoder_distance;
+
+    for (int i = 0; i < encoder_readings_to_average; i++)
+    {
+        reading_sum += readings[i];
+    }
+
+    return ((reading_sum / encoder_readings_to_average) == 0);
 }
 
 bool DriveTrain::is_L_pot_bending()

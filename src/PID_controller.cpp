@@ -125,6 +125,5 @@ double PID_controller::get_error_average(int errors_to_average)
     {
         error_sum += errors[i];
     }
-    pros::lcd::set_text(4, "sum: " + std::to_string(error_sum) + " 0: " + std::to_string((int)errors[0]) + " 1: " + std::to_string((int)errors[1]) + " 2: " + std::to_string((int)errors[2]));
     return error_sum / errors_to_average;
 }

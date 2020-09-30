@@ -7,7 +7,7 @@
 bool is_disabled;
 
 //object of class DriveTrain:
-DriveTrain drivetrain(1.375, 7.02739575, 7.02739575, 7.02739575, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM, &vision_sensor, &IMU, &left_pot, &right_pot, &collision_light_sensor);//7.02739575
+DriveTrain drivetrain(1.375, 7.02739575, 7.02739575, 7.02739575, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM, &vision_sensor, &IMU, &left_pot, &right_pot);
 
 //object of class Scorer:
 Scorer scorer(&intakeleft, &intakeright, &indexer, &flywheel, &vision_sensor, &BLUE_BALL_SIGNATURE, &RED_BALL_SIGNATURE, &lower_limit_switch, &upper_counter_light_sensor, &dispense_counter_light_sensor);
