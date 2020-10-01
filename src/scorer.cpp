@@ -12,23 +12,6 @@ Scorer::Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *i
     this->dispense_counter_light_sensor = dispense_counter_light_sensor;
 }
 
-//will eventually want to move this to its own class
-void Scorer::setup_light_counter(double light_sensor_threshold, double light_calibrated_value, double counter)
-{
-    // makes the upper_balls_counted only go up when it is greater than 100 milliseconds:
-    double delay_time = 100;
-
-    // logic to make an upper counting system for balls that have exited our loop:
-    if ((light_calibrated_value > light_sensor_threshold && prev_light_value < light_sensor_threshold) && std::abs(prev_time - pros::millis()) > delay_time)
-    {
-        counter++;
-        prev_time = pros::millis();
-    }
-
-    // setting the previous light value:
-    prev_light_value = light_calibrated_value;
-}
-
 void Scorer::run_lower_limit_switch()
 {
     // makes the upper_balls_counted only go up when it is greater than 100 milliseconds:
@@ -83,23 +66,8 @@ void Scorer::run_dispense_light_sensor()
     prev_dispense_light_value = get_dispense_light_calibrated_value();
 }
 
-void Scorer::deploy_fangs()
-{
-    position_fangs = true;
-}
-
 void Scorer::manage_indexer_and_flywheel()
 {
-    if (position_fangs)
-    {
-        set_indexers(127);
-        pros::delay(100);
-        set_indexers(-127);
-        pros::delay(100);
-        set_indexers(0);
-        position_fangs = false;
-    }
-
     if (num_balls_to_dispense != 0)
     {
         // set_indexers(-127);
@@ -142,21 +110,8 @@ void Scorer::start_auton_sensors_update_thread()
     }
 }
 
-void Scorer::deploy_intakes()
-{
-    position_intakes = true;
-}
-
 void Scorer::manage_intakes()
 {
-    if (position_intakes)
-    {
-        set_intakes(-127);
-        pros::delay(500);
-        set_intakes(127);
-        position_intakes = false;
-    }
-
     if (num_balls_to_collect != 0 && num_balls_to_dispense_through_intakes == 0)
     {
         set_intakes(127);

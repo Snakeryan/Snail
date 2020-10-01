@@ -382,7 +382,7 @@ public:
     void turn_to_point(double X2, double Y2);
 
     /** 
- *        sets the X-drive motors at a specified value (put in value between 0-127 and DO NOT USE FOR DRIVER CONTROL)
+ *        sets the X-drive motors at a specified value (put in value between -127 to 127 and DO NOT USE FOR DRIVER CONTROL)
  * \param FL_motor_power
  *        the power to apply to the front left motor
  * \param FR_motor_power

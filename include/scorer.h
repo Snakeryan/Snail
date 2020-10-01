@@ -27,7 +27,7 @@ class Scorer
     // flag for deploying the bumper's fangs
     bool position_fangs, position_intakes;
 
-    //pointer objects of all of our vision signatures:
+    //pointer objects of vision signatures:
     pros::vision_signature_s_t *BLUE_BALL_SIGNATURE;
     pros::vision_signature_s_t *RED_BALL_SIGNATURE;
 
@@ -36,19 +36,29 @@ class Scorer
     pros::ADIAnalogIn *upper_counter_light_sensor;
     pros::ADIAnalogIn *dispense_counter_light_sensor;
 
+    /**
+ *        manages collecting and dispensing through the intakes
+*/
     void manage_intakes();
+
     /**
  *        makes a lower ball counter with a limit switch (use this to know how many balls have entered the robot)
 */
     void run_lower_limit_switch();
 
     /**
- *        makes an upper ball counter with a light sensor (use this to know how many balls have exited the robot)
+ *        makes an upper ball counter with a light sensor (use this to know how many balls have exited the robot's loop)
 */
     void run_upper_light_sensor();
 
+    /**
+ *        will eventually want to implement this to eliminate redundancies
+*/
     void setup_light_counter(double light_sensor_threshold, double light_calibrated_value, double counter);
 
+    /**
+ *        makes a dispense counter with a light sensor (use this to know how many balls have exited the robot's dispenser)
+*/
     void run_dispense_light_sensor();
 
     /**
@@ -57,7 +67,7 @@ class Scorer
     void start_auton_sensors_update_thread();
 
     /**
- *        will dispence balls when a flag is activated
+ *        manages scoring, dispensing through the dispenser, and turning on the indexers to collect balls
 */
     void manage_indexer_and_flywheel();
 
@@ -72,7 +82,7 @@ class Scorer
     void start_intake_manager_thread();
 
     /**
- *        scores a specified amount of balls using the upper ball counter and the light sensor to ensure that balls do not collide with each other (turns indexers off when the light sensor is detected)
+ *        scores a specified amount of balls using the upper ball counter and the light sensor to ensure that balls do not collide with each other (turns indexers off when a ball is detected by the upper light sensor)
  * \param num_balls
  *        how many balls to shoot
 */
@@ -98,49 +108,49 @@ public:
  *        address of the lower_limit_switch
  * \param upper_counter_light_sensor
  *        address of the upper light sensor
+ * \param dispense_counter_light_sensor
+ *        address of the dispense light sensor
 */
     Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *indexer, pros::Motor *flywheel, pros::Vision *vision_sensor, pros::vision_signature_s_t *BLUE_BALL_SIGNATURE, pros::vision_signature_s_t *RED_BALL_SIGNATURE, pros::ADIDigitalIn *lower_limit_switch, pros::ADIAnalogIn *upper_counter_light_sensor, pros::ADIAnalogIn *dispense_counter_light_sensor);
 
     /**
- *        makes all of the scorer threads
+ *        makes all of the scorer threads (auton sensors thread, flywheel and indexer management thread, and intake management thread)
 */
     void make_scorer_threads();
 
     /**
  *        sets the speed of the intakes
  * \param power
- *        the power at which to run the intakes
+ *        the power at which to run the intakes (between -127 to 127)
 */
     void set_intakes(int intake_power);
 
     void score_n_balls(double n_balls = 0);
     /**
- *        sets the flywheel's speed
+ *        sets the speed of the flywheel
  * \param flywheel_power
- *        the power at which to run the flywheel
+ *        the power at which to run the flywheel (between -127 to 127)
 */
     void set_flywheel(int flywheel_power);
 
     /**
  *        sets the speed of the indexers
  * \param indexer_power
- *        the power at which to run the indexers
+ *        the power at which to run the indexers (between -127 to 127)
 */
     void set_indexers(int indexer_power);
 
     /**
  * \return
- *        the current value of the light sensor with the calibrated light sensor's value being zero
+ *        the current value of the upper light sensor with the calibrated light sensor's value being zero
 */
     double get_upper_light_calibrated_value();
 
-    double get_dispense_light_calibrated_value();
-
     /**
  * \return
- *        deploys the intakes using a start and stop method
+ *        the current value of the dispense light sensor with the calibrated light sensor's value being zero
 */
-    void deploy_intakes();
+    double get_dispense_light_calibrated_value();
 
     /**
  *        waits until a certain number of balls have passed the light sensor
@@ -152,36 +162,71 @@ public:
     /**
  *        waits until a certain number of balls have passed the lower limit switch
  * \param number_of_balls_passed
- *        how many balls to wait to pass the limit switch
+ *        how many balls to wait to pass the lower limit switch
 */
     void wait_until_number_of_lower_balls_counted(int number_of_balls_passed);
 
     /**
- *        activates the dispensing flag (will automatically be turned off) and dispenses the balls within the robot
+ *        will dispense a specified number of balls (is asynchronous/non-blocking)
+ * \param num_balls_to_dispense
+ *        the number of balls to dispense
+ * \param is_intake_dispense
+ *        will dispense out of intakes instead of the dispenser if set to true
 */
     void dispense_n_balls(double num_balls_to_dispense, bool is_intake_dispense = false);
 
+    /**
+ *        waits until a certain amount of balls have passed the lower limit switch or the dispense light sensor 
+ * \param num_balls_to_dispense
+ *        the number of balls to wait to pass either the lower limit switch or the dispense light sensor 
+ * \param is_intake_dispense
+ *        will wait for balls to pass the lower limit switch instead of the dispense light sensor
+*/
     void wait_until_number_of_balls_dispensed(int num_balls_to_dispense, bool is_intake_dispense = false);
 
     /**
- *        resets the lower and upper balls counted
+ *        resets the lower, upper, and dispensed balls counted
 */
     void reset_balls_counted();
 
+    /**
+ *        collects a specified amount of balls (this code is asynchronous/non-blocking)
+ * \param num_balls_to_collect
+ *        how many balls to collect
+*/
     void collect_n_balls(double num_balls_to_collect);
 
+    /**
+ * \return
+ *        the current value of lower_balls_counted
+*/
     double get_lower_balls_counted();
 
+    /**
+ * \return
+ *        the current value of upper_balls_counted
+*/
     double get_upper_balls_counted();
 
+    /**
+ * \return
+ *        the current value of dispense_balls_counted
+*/
     double get_dispense_balls_counted();
 
+    /**
+ *        turns off the intakes, indexers, and flywheel
+*/
     void stop_motors();
 
-    void deploy_fangs();
-
+    /**
+ *        creates the scorer threads 
+*/
     void setup();
 
+    /**
+ *        destructor to ensure that the scorer threads do not outlive the object
+*/
     ~Scorer();
 };
 
