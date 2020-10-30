@@ -1,4 +1,4 @@
-Our code is within the src (implementation) and include (header) files
+Our code is within the src (implementation) and include (header) files. For documentation of what the functions do is within the header files.
 
 Even with the video, there are many more aspects to our program. These include using a Kalman filter (https://www.youtube.com/watch?v=CaCcOwJPytQ) on the IMU a
 vision sensor readings, trying to first use a vision sensor to align to tower backboards, and taken in an anonymous function into our drive_to_point() function.
