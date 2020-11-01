@@ -35,23 +35,6 @@ void run_homerow()
 
 void test_mode()
 {
-    // double start_time = pros::millis();
-    pros::delay(5000);
-    // while (pros::millis() < start_time + 35000)
-    // {
-    //     drivetrain.point_turn_PID(90);
-    // }
-    // pros::delay(5000);
-    // while (pros::millis() < start_time + 70000)
-    // {
-    // drivetrain.run_bang_control(90);
-    // }
-    // pros::delay(5000);
-    // while (pros::millis() < start_time + 105000)
-    // {
-    // drivetrain.run_p_control(90);
-    // }
-
     drivetrain.center_on_tower_with_bumper(0, false, 10000, true);
 }
 

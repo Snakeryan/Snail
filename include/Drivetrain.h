@@ -495,9 +495,6 @@ public:
 */
     void setup();
 
-    void run_p_control(double target);
-    void run_bang_control(double target);
-
     /** 
  *        centers on a game tower by using the same algorithms as drive_to_point (allows the robot to keep a constant heading while moving) 
  * \param angle
