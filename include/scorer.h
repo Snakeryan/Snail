@@ -13,7 +13,7 @@ class Scorer
     // counters for the balls entering and exiting our loop and upper balls:
     int lower_balls_counted, upper_balls_counted, dispense_balls_counted = 0;
 
-    double prev_light_value, prev_upper_light_value, prev_dispense_light_value, prev_lower_limit_value, upper_prev_time, dispense_prev_time, prev_time, lower_prev_time, num_balls_to_score, num_balls_to_collect, num_balls_to_dispense, num_balls_to_dispense_through_intakes = 0;
+    double prev_light_value, prev_upper_light_value, prev_dispense_light_value, prev_lower_light_value, upper_prev_time, dispense_prev_time, prev_time, lower_prev_time, num_balls_to_score, num_balls_to_collect, num_balls_to_dispense, num_balls_to_dispense_through_intakes, time_taken_per_ball = 0;
 
     //pointer objects of all of the motors that are not part of the drivetrain:
     pros::Motor *intakeleft;
@@ -32,8 +32,9 @@ class Scorer
     pros::vision_signature_s_t *RED_BALL_SIGNATURE;
 
     //pointers to the three-wire sensors:
-    pros::ADIDigitalIn *lower_limit_switch;
+    pros::ADIAnalogIn *lower_counter_light_sensor;
     pros::ADIAnalogIn *upper_counter_light_sensor;
+    pros::ADIAnalogIn *middle_light_sensor;
     pros::ADIAnalogIn *dispense_counter_light_sensor;
 
     /**
@@ -42,9 +43,9 @@ class Scorer
     void manage_intakes();
 
     /**
- *        makes a lower ball counter with a limit switch (use this to know how many balls have entered the robot)
+ *        makes a lower ball counter with a light sensor (use this to know how many balls have entered the robot)
 */
-    void run_lower_limit_switch();
+    void run_lower_light_sensor();
 
     /**
  *        makes an upper ball counter with a light sensor (use this to know how many balls have exited the robot's loop)
@@ -86,7 +87,7 @@ class Scorer
  * \param num_balls
  *        how many balls to shoot
 */
-    void score_in_goal_with_light(int num_balls);
+    void score_in_goal_with_light(int num_balls, int time_per_ball);
 
 public:
     /** 
@@ -104,14 +105,16 @@ public:
  *        address of the vision sensor's blue ball signature
  * \param RED_BALL_SIGNATURE 
  *        address of the vision sensor's red ball signature
- * \param lower_limit_switch
- *        address of the lower_limit_switch
+ * \param lower_counter_light_sensor
+ *        address of the lower_counter_light_sensor
  * \param upper_counter_light_sensor
  *        address of the upper light sensor
  * \param dispense_counter_light_sensor
  *        address of the dispense light sensor
+ * \param middle_light_sensor
+ *        address of the middle light sensor
 */
-    Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *indexer, pros::Motor *flywheel, pros::Vision *vision_sensor, pros::vision_signature_s_t *BLUE_BALL_SIGNATURE, pros::vision_signature_s_t *RED_BALL_SIGNATURE, pros::ADIDigitalIn *lower_limit_switch, pros::ADIAnalogIn *upper_counter_light_sensor, pros::ADIAnalogIn *dispense_counter_light_sensor);
+    Scorer(pros::Motor *intakeleft, pros::Motor *intakeright, pros::Motor *indexer, pros::Motor *flywheel, pros::Vision *vision_sensor, pros::vision_signature_s_t *BLUE_BALL_SIGNATURE, pros::vision_signature_s_t *RED_BALL_SIGNATURE, pros::ADIAnalogIn *lower_counter_light_sensor, pros::ADIAnalogIn *upper_counter_light_sensor, pros::ADIAnalogIn *dispense_counter_light_sensor, pros::ADIAnalogIn *middle_light_sensor);
 
     /**
  *        makes all of the scorer threads (auton sensors thread, flywheel and indexer management thread, and intake management thread)
@@ -125,7 +128,7 @@ public:
 */
     void set_intakes(int intake_power);
 
-    void score_n_balls(double n_balls = 0);
+    void score_n_balls(double n_balls = 0, double time_taken_per_ball = 1250);
     /**
  *        sets the speed of the flywheel
  * \param flywheel_power
@@ -148,6 +151,18 @@ public:
 
     /**
  * \return
+ *        the current value of the lower light sensor with the calibrated light sensor's value being zero
+*/
+    double get_lower_light_calibrated_value();
+
+    /**
+ * \return
+ *        the current value of the middle light sensor with the calibrated light sensor's value being zero
+*/
+    double get_middle_light_calibratred_value();
+
+    /**
+ * \return
  *        the current value of the dispense light sensor with the calibrated light sensor's value being zero
 */
     double get_dispense_light_calibrated_value();
@@ -157,7 +172,7 @@ public:
  * \param number_of_balls_passed
  *        how many balls to wait to pass the light sensor
 */
-    void wait_until_number_of_uppper_balls_counted(int number_of_balls_passed);
+    void wait_until_number_of_upper_balls_counted(int number_of_balls_passed);
 
     /**
  *        waits until a certain number of balls have passed the lower limit switch

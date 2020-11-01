@@ -26,7 +26,7 @@ namespace auton_modes
 extern auton_modes::Auton_mode auton_mode;
 
 //object of class autonUtils
-extern DriveTrain drivetrain;
+extern Drivetrain drivetrain;
 
 //object of class Scorer
 extern Scorer scorer;
@@ -53,7 +53,8 @@ extern pros::ADIEncoder encoderR;
 
 //sensors:
 extern pros::Imu IMU;
-extern pros::ADIDigitalIn lower_limit_switch;
+extern pros::ADIAnalogIn lower_counter_light_sensor;
+extern pros::ADIAnalogIn middle_light_sensor;
 extern pros::ADIAnalogIn dispense_counter_light_sensor;
 extern pros::ADIAnalogIn upper_counter_light_sensor;
 extern pros::ADIAnalogIn collision_light_sensor;

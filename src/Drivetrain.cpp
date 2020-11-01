@@ -19,7 +19,7 @@ const T &constrain(const T &x, const T &a, const T &b)
         return x;
 }
 
-DriveTrain::DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot)
+Drivetrain::Drivetrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot)
 {
     this->encoder_wheel_radius = encoder_wheel_radius;
     this->wL = wL;
@@ -39,7 +39,7 @@ DriveTrain::DriveTrain(double encoder_wheel_radius, double wL, double wR, double
     this->collision_light_sensor = collision_light_sensor;
 }
 
-double DriveTrain::compute_alpha(double right_encoder_distance, double left_encoder_distance)
+double Drivetrain::compute_alpha(double right_encoder_distance, double left_encoder_distance)
 {
     return (left_encoder_distance - right_encoder_distance) / (wL + wR);
 }
@@ -47,17 +47,17 @@ double DriveTrain::compute_alpha(double right_encoder_distance, double left_enco
 //method to convert from encoder ticks to wheels for all of the encoder wheels
 //formula (2πr/360) * ticks:
 
-double DriveTrain::get_left_encoder_distance()
+double Drivetrain::get_left_encoder_distance()
 {
     return ((2 * encoder_wheel_radius * pi) / 360) * encoderL->get_value();
 }
 
-double DriveTrain::get_right_encoder_distance()
+double Drivetrain::get_right_encoder_distance()
 {
     return ((2 * encoder_wheel_radius * pi) / 360) * encoderR->get_value();
 }
 
-double DriveTrain::get_middle_encoder_distance()
+double Drivetrain::get_middle_encoder_distance()
 {
     return ((2 * encoder_wheel_radius * pi) / 360) * encoderM->get_value();
 }
@@ -65,7 +65,7 @@ double DriveTrain::get_middle_encoder_distance()
 //method to compute alpha (should also average it with the imu readings)
 //formula is alpha = (right encoder value reading - left encoder value reading)/width of the robot:
 
-double DriveTrain::compute_delta_alpha(double delta_right_distance, double delta_left_distance)
+double Drivetrain::compute_delta_alpha(double delta_right_distance, double delta_left_distance)
 {
     double delta_alpha = (delta_left_distance - delta_right_distance) / (wL + wR);
     return delta_alpha;
@@ -74,7 +74,7 @@ double DriveTrain::compute_delta_alpha(double delta_right_distance, double delta
 //method to compute Dly
 //formula is 2sin(alpha/2) * (right encoder value + (arcR/alpha))
 
-double DriveTrain::compute_delta_Dly(double delta_alpha, double delta_right_distance)
+double Drivetrain::compute_delta_Dly(double delta_alpha, double delta_right_distance)
 {
     if (delta_alpha == 0)
     {
@@ -86,7 +86,7 @@ double DriveTrain::compute_delta_Dly(double delta_alpha, double delta_right_dist
 //method to comput Dlx
 //formula is 2sin(alpha/2) * (middle tracking wheel value/alpha - wM)
 
-double DriveTrain::compute_delta_Dlx(double delta_alpha, double delta_middle_distance)
+double Drivetrain::compute_delta_Dlx(double delta_alpha, double delta_middle_distance)
 {
     if (delta_alpha == 0)
     {
@@ -98,17 +98,17 @@ double DriveTrain::compute_delta_Dlx(double delta_alpha, double delta_middle_dis
 //method to convert from local variables to global variables
 //formulas are: globalX = (Dlx * cos(alpha/2)) + (Dly * sin(alpha/2)) globalY = (Dly * cos(alpha/2)) - (Dlx * sin(alpha/2)):
 
-double DriveTrain::compute_delta_globalX(double Dlx, double Dly, double delta_alpha)
+double Drivetrain::compute_delta_globalX(double Dlx, double Dly, double delta_alpha)
 {
     return (Dlx * cos(delta_alpha / 2 + prev_alpha)) + (Dly * sin(delta_alpha / 2 + prev_alpha));
 }
 
-double DriveTrain::compute_delta_globalY(double Dlx, double Dly, double delta_alpha)
+double Drivetrain::compute_delta_globalY(double Dlx, double Dly, double delta_alpha)
 {
     return (Dly * cos(delta_alpha / 2 + prev_alpha)) - (Dlx * sin(delta_alpha / 2 + prev_alpha));
 }
 
-double DriveTrain::convert_rad_to_deg_wraped(double rad)
+double Drivetrain::convert_rad_to_deg_wraped(double rad)
 {
     double deg = (rad * 180) / pi;
 
@@ -121,12 +121,12 @@ double DriveTrain::convert_rad_to_deg_wraped(double rad)
     return deg;
 }
 
-double DriveTrain::convert_rad_to_deg(double rad)
+double Drivetrain::convert_rad_to_deg(double rad)
 {
     return (rad * 180) / pi;
 }
 
-double DriveTrain::get_alpha_in_degrees()
+double Drivetrain::get_alpha_in_degrees()
 {
     // return convert_rad_to_deg_wraped(alpha);
     return convert_rad_to_deg_wraped(alpha);
@@ -134,13 +134,13 @@ double DriveTrain::get_alpha_in_degrees()
 
 //method to convert from degrees to radians
 //formula is 1deg * π/180:
-double DriveTrain::convert_deg_to_rad(double deg)
+double Drivetrain::convert_deg_to_rad(double deg)
 {
     return (deg * pi) / 180;
 }
 
 //method to update functions:
-void DriveTrain::update_odometry()
+void Drivetrain::update_odometry()
 {
     update_odometry_mutex.take(1000);
     double left_encoder_distance = get_left_encoder_distance();
@@ -188,12 +188,12 @@ void DriveTrain::update_odometry()
     update_odometry_mutex.give();
 }
 
-void DriveTrain::use_IMU_for_odometry(bool is_IMU_odometry)
+void Drivetrain::use_IMU_for_odometry(bool is_IMU_odometry)
 {
     this->is_IMU_odometry = is_IMU_odometry;
 }
 
-void DriveTrain::set_current_global_position(double new_X, double new_Y, double new_alpha_in_degrees)
+void Drivetrain::set_current_global_position(double new_X, double new_Y, double new_alpha_in_degrees)
 {
     update_odometry_mutex.take(1000);
     globalX = new_X;
@@ -205,7 +205,7 @@ void DriveTrain::set_current_global_position(double new_X, double new_Y, double 
     update_odometry_mutex.give();
 }
 
-void DriveTrain::set_alpha(double new_alpha_in_degrees)
+void Drivetrain::set_alpha(double new_alpha_in_degrees)
 {
     update_odometry_mutex.take(1000);
     prev_IMU_heading = convert_deg_to_rad(new_alpha_in_degrees);
@@ -215,12 +215,12 @@ void DriveTrain::set_alpha(double new_alpha_in_degrees)
     update_odometry_mutex.give();
 }
 
-void DriveTrain::reset_odom()
+void Drivetrain::reset_odom()
 {
     set_current_global_position(0, 0, 0);
 }
 
-void DriveTrain::turn_to_point(double destX, double destY)
+void Drivetrain::turn_to_point(double destX, double destY)
 {
     double angle = atan2(destX - globalX, destY - globalY);
     if (angle < 0)
@@ -228,7 +228,7 @@ void DriveTrain::turn_to_point(double destX, double destY)
         angle += TAU;
     }
     pros::lcd::set_text(5, "the angle to turn is: " + std::to_string(convert_rad_to_deg_wraped(angle)));
-    point_turn_PID(convert_rad_to_deg_wraped(angle));
+    (convert_rad_to_deg_wraped(angle));
 }
 
 /*
@@ -241,17 +241,17 @@ P2 = sin(T + pi/4)
 s = max(std::abs(P1), std::abs(P2)) / S
 */
 
-double DriveTrain::compute_P1(double T)
+double Drivetrain::compute_P1(double T)
 {
     return -cos(T + pi / 4);
 }
 
-double DriveTrain::compute_P2(double T)
+double Drivetrain::compute_P2(double T)
 {
     return sin(T + pi / 4);
 }
 
-double DriveTrain::compute_s(double P1, double P2, double S)
+double Drivetrain::compute_s(double P1, double P2, double S)
 {
     return MAX(std::abs(P1), std::abs(P2)) / S;
 }
@@ -268,35 +268,35 @@ double DriveTrain::compute_s(double P1, double P2, double S)
     BR = P2/s(1 - std::abs(R)) - R * S
 */
 
-void DriveTrain::compute_FL_motor_speed(double P2, double s, double K_constant, double R, double multiplier)
+void Drivetrain::compute_FL_motor_speed(double P2, double s, double K_constant, double R, double multiplier)
 {
     double FL_speed = (P2 / s) * (1 - std::abs(R)) + R * K_constant;
     FL->move_voltage(FL_speed * 12700 * multiplier);
     // pros::lcd::set_text(0, "FL:" + std::to_string(FL_speed));
 }
 
-void DriveTrain::compute_FR_motor_speed(double P1, double s, double K_constant, double R, double multiplier)
+void Drivetrain::compute_FR_motor_speed(double P1, double s, double K_constant, double R, double multiplier)
 {
     double FR_speed = ((P1 / s) * (1 - std::abs(R)) - R * K_constant) * -1;
     FR->move_voltage(FR_speed * 12700 * multiplier);
     // pros::lcd::set_text(1, "FR:" + std::to_string(FR_speed));
 }
 
-void DriveTrain::compute_BL_motor_speed(double P1, double s, double K_constant, double R, double multiplier)
+void Drivetrain::compute_BL_motor_speed(double P1, double s, double K_constant, double R, double multiplier)
 {
     double BL_speed = ((P1 / s) * (1 - std::abs(R)) + R * K_constant);
     BL->move_voltage(BL_speed * 12700 * multiplier);
     // pros::lcd::set_text(2, "BL:" + std::to_string(BL_speed));
 }
 
-void DriveTrain::compute_BR_motor_speed(double P2, double s, double K_constant, double R, double multiplier)
+void Drivetrain::compute_BR_motor_speed(double P2, double s, double K_constant, double R, double multiplier)
 {
     double BR_speed = ((P2 / s) * (1 - std::abs(R)) - R * K_constant) * -1;
     BR->move_voltage(BR_speed * 12700 * multiplier);
     // pros::lcd::set_text(3, "BR:" + std::to_string(BR_speed));
 }
 
-void DriveTrain::set_turn(double turn)
+void Drivetrain::set_turn(double turn)
 {
     FL->move_voltage(turn * 1000);
     FR->move_voltage(turn * 1000);
@@ -304,7 +304,7 @@ void DriveTrain::set_turn(double turn)
     BL->move_voltage(turn * 1000);
 }
 
-double DriveTrain::compute_angle_error(double target, double current_angle)
+double Drivetrain::compute_angle_error(double target, double current_angle)
 {
     double error = current_angle - target;
     if (error < -pi)
@@ -325,7 +325,7 @@ double DriveTrain::compute_angle_error(double target, double current_angle)
     }
 }
 
-void DriveTrain::run_Xdrive(double T, double S, double R, double K_constant)
+void Drivetrain::run_Xdrive(double T, double S, double R, double K_constant)
 {
     double P1 = compute_P1(T);
     double P2 = compute_P2(T);
@@ -344,7 +344,7 @@ void DriveTrain::run_Xdrive(double T, double S, double R, double K_constant)
     compute_BR_motor_speed(P2, s, K_constant, R, 2);
 }
 
-void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, int point_type, double rotational_KP, const std::function<void()> &trigger, double trigger_distance, double timeout)
+void Drivetrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, int point_type, double rotational_KP, const std::function<void()> &trigger, double trigger_distance, double timeout)
 {
     //configuration:
     //hyperparameters:
@@ -463,7 +463,7 @@ void DriveTrain::drive_to_point(double tX, double tY, double target_angle_in_deg
     pros::lcd::set_text(0, "drive_to_point exited");
 }
 
-bool DriveTrain::collision_detected(const int encoder_readings_to_average)
+bool Drivetrain::collision_detected(const int encoder_readings_to_average)
 {
     double readings[encoder_readings_to_average];
     double reading_sum;
@@ -482,21 +482,21 @@ bool DriveTrain::collision_detected(const int encoder_readings_to_average)
     return ((reading_sum / encoder_readings_to_average) == 0);
 }
 
-bool DriveTrain::is_L_pot_bending()
+bool Drivetrain::is_L_pot_bending()
 {
     double L_pot_threshold = 700;
     double L_pot_error = L_pot_threshold - left_pot->get_value();
-    return L_pot_error < -30;
+    return L_pot_error < -100;
 }
 
-bool DriveTrain::is_R_pot_bending()
+bool Drivetrain::is_R_pot_bending()
 {
     double R_pot_threshold = 750;
     double R_pot_error = R_pot_threshold - right_pot->get_value();
-    return R_pot_error < -30;
+    return R_pot_error < -100;
 }
 
-void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU, double timeout, bool use_pots)
+void Drivetrain::center_on_tower_with_bumper(double target_angle, bool use_IMU, double timeout, bool use_pots)
 {
     const double k_translation = 30, k_s = 0.3;
 
@@ -551,7 +551,7 @@ void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU, 
         {
             R = MIN((arc_length_error * 1) / k_translation, 1);
             S = k_s;
-            T = atan2(-10, ((std::abs(R_pot_error) / -std::abs(R_pot_error)) / 2) * -0.001);
+            T = atan2(-10, ((std::abs(R_pot_error) / -std::abs(L_pot_error)) / 2) * -0.001);
         }
 
         if (!(R_bend_time > pros::millis()) && !(L_bend_time > pros::millis()))
@@ -570,12 +570,12 @@ void DriveTrain::center_on_tower_with_bumper(double target_angle, bool use_IMU, 
         run_Xdrive(T, S, R);
         pros::delay(20);
 
-    } while (std::abs(prev_time - pros::millis()) < timeout); //(!collision_detected() || is_R_pot_bending() || is_L_pot_bending() || std::abs(pros::millis() - prev_time) < 150);
+    } while (std::abs(prev_time - pros::millis()) < timeout); 
     stop_drive_motors();
     pros::lcd::set_text(3, "exited");
 }
 
-void DriveTrain::drive_to_tower_backboard(double target_angle, double when_to_include_integral, bool use_IMU, bool is_bumper_drive)
+void Drivetrain::drive_to_tower_backboard(double target_angle, double when_to_include_integral, bool use_IMU, bool is_bumper_drive)
 {
     //turn to a specified angle
     point_turn_PID(target_angle, use_IMU);
@@ -610,7 +610,6 @@ void DriveTrain::drive_to_tower_backboard(double target_angle, double when_to_in
     pid_controller.use_crossover_zero();
     pid_controller.use_integrater_error_bound(when_to_include_integral); //first time == 3, second time == 7, third time == 7
     double S;
-    SimpleKalmanFilter vision_kalman_filter(3, 3, 0.08);
     do
     {
         backboard = vision_sensor->get_by_size(0);
@@ -621,10 +620,9 @@ void DriveTrain::drive_to_tower_backboard(double target_angle, double when_to_in
         }
         else
         {
-            double filtered_X = vision_kalman_filter.updateEstimate(backboard.x_middle_coord);
             pros::lcd::set_text(5, "average error: " + std::to_string(pid_controller.get_error_average(10)));
             pros::lcd::set_text(2, "X:" + std::to_string(backboard.x_middle_coord) + "f: " + std::to_string(filtered_X) + ")");
-            X_error = filtered_X - X_center_position;
+            X_error = backboard.x_middle_coord - X_center_position;
         }
 
         // double angle_error = compute_angle_error(convert_deg_to_rad(target_angle), convert_deg_to_rad(IMU->get_heading()))
@@ -658,7 +656,7 @@ void DriveTrain::drive_to_tower_backboard(double target_angle, double when_to_in
     stop_drive_motors();
 }
 
-void DriveTrain::point_turn_PID(double target, bool use_IMU, const double Kp, const double Ki, const double Kd)
+void Drivetrain::point_turn_PID(double target, bool use_IMU, const double Kp, const double Ki, const double Kd)
 {
     PID_controller pid_controller(Kp, Ki, Kd, 127, -127);
     pid_controller.use_integrater_error_bound(convert_deg_to_rad(5));
@@ -674,18 +672,63 @@ void DriveTrain::point_turn_PID(double target, bool use_IMU, const double Kp, co
         {
             angle_error = compute_angle_error(convert_deg_to_rad(target), get_constrained_alpha());
         }
+        // angle_error = compute_angle_error(convert_deg_to_rad(target), get_constrained_alpha());
+        double motor_power = pid_controller.compute(angle_error);
+        printf("%d,%f\n", pros::millis(), angle_error);
+        set_turn(motor_power);
+        pros::delay(20);
+    } while (std::abs(pid_controller.get_derivative()) > 0.000000000001 || std::abs(angle_error) > 0.004);
+    pros::lcd::set_text(0, "pid escaped");
+}
+
+void Drivetrain::run_p_control(double target)
+{
+    PID_controller pid_controller(30, 0, 0, 127, -127);
+    double angle_error;
+    do
+    {
+
         angle_error = compute_angle_error(convert_deg_to_rad(target), get_constrained_alpha());
         double motor_power = pid_controller.compute(angle_error);
 
         set_turn(motor_power);
         pros::lcd::set_text(4, "the angle error is: " + std::to_string(angle_error * 180 / pi));
         pros::lcd::set_text(3, "the PID value is: " + std::to_string(motor_power));
+        printf("%d,%d,%f\n", pros::millis(), 0, angle_error * 180 / pi);
         pros::delay(20);
     } while (std::abs(pid_controller.get_derivative()) > 0.000000000001 || std::abs(angle_error) > 0.004);
     pros::lcd::set_text(0, "pid escaped");
 }
 
-void DriveTrain::start_odometry_update_thread()
+void Drivetrain::run_bang_control(double target)
+{
+    PID_controller pid_controller(30, 0, 0, 127, -127);
+    double angle_error;
+    do
+    {
+
+        angle_error = compute_angle_error(convert_deg_to_rad(target), get_constrained_alpha());
+        double motor_power;
+        if (angle_error < 0)
+        {
+            motor_power = 127;
+        }
+        else
+        {
+            motor_power = -127;
+        }
+
+        set_turn(motor_power);
+        pros::lcd::set_text(4, "the angle error is: " + std::to_string(angle_error * 180 / pi));
+        pros::lcd::set_text(3, "the PID value is: " + std::to_string(motor_power));
+        printf("%d,%f\n", pros::millis(), angle_error);
+        pid_controller.compute(angle_error);
+        pros::delay(20);
+    } while (std::abs(pid_controller.get_derivative()) > 0.000000000001 || std::abs(angle_error) > 0.004);
+    pros::lcd::set_text(0, "pid escaped");
+}
+
+void Drivetrain::start_odometry_update_thread()
 {
     while (true)
     {
@@ -694,19 +737,19 @@ void DriveTrain::start_odometry_update_thread()
     }
 }
 
-void DriveTrain::make_odometry_update_thread()
+void Drivetrain::make_odometry_update_thread()
 {
     odometry_update_task = std::make_shared<pros::Task>([this] { start_odometry_update_thread(); });
 }
 
 //getter for globalX:
 
-double DriveTrain::get_globalX()
+double Drivetrain::get_globalX()
 {
     return globalX;
 }
 
-double DriveTrain::get_constrained_alpha()
+double Drivetrain::get_constrained_alpha()
 {
     double theta = alpha;
     theta = fmod(theta, TAU);
@@ -719,24 +762,24 @@ double DriveTrain::get_constrained_alpha()
 
 //getter for globalY
 
-double DriveTrain::get_globalY()
+double Drivetrain::get_globalY()
 {
     return globalY;
 }
 
-void DriveTrain::set_motors(double FL_motor_power, double FR_motor_power, double BL_motor_power, double BR_motor_power)
+void Drivetrain::set_motors(double FL_motor_power, double FR_motor_power, double BL_motor_power, double BR_motor_power)
 {
     FL->move_voltage(FL_motor_power * 1000);
     FR->move_voltage(FR_motor_power * 1000);
     BL->move_voltage(BL_motor_power * 1000);
     BR->move_voltage(BR_motor_power * 1000);
 }
-void DriveTrain::stop_drive_motors()
+void Drivetrain::stop_drive_motors()
 {
     set_motors(0, 0, 0, 0);
 }
 
-void DriveTrain::driver_control(double Yaxis, double Xaxis, double turn)
+void Drivetrain::driver_control(double Yaxis, double Xaxis, double turn)
 {
 
     double FL_power = Yaxis + Xaxis + (turn);
@@ -750,7 +793,7 @@ void DriveTrain::driver_control(double Yaxis, double Xaxis, double turn)
     BR->move(BR_power);
 }
 
-void DriveTrain::calibrate_IMU()
+void Drivetrain::calibrate_IMU()
 {
     pros::lcd::set_text(5, "Calibrating IMU");
     IMU->reset();
@@ -766,12 +809,12 @@ void filter_IMU()
 {
 }
 
-double DriveTrain::get_IMU_heading()
+double Drivetrain::get_IMU_heading()
 {
     return convert_rad_to_deg_wraped(IMU_heading);
 }
 
-void DriveTrain::setup_sensors()
+void Drivetrain::setup_sensors()
 {
 
     BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
@@ -781,14 +824,14 @@ void DriveTrain::setup_sensors()
     vision_sensor->set_signature(3, &tower_backboard_signature);
 }
 
-void DriveTrain::setup()
+void Drivetrain::setup()
 {
     setup_sensors();
     make_odometry_update_thread();
 }
 
 //destructor:
-DriveTrain::~DriveTrain()
+Drivetrain::~Drivetrain()
 {
     if (odometry_update_task.get() != nullptr)
     {

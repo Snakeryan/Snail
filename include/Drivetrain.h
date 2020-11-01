@@ -8,9 +8,8 @@
 #include <pthread.h>
 #include <memory>
 #include "main.h"
-#include "SimpleKalmanFilter.h"
 
-class DriveTrain
+class Drivetrain
 {
 
     // Task that updates the odometry variables:
@@ -323,7 +322,7 @@ public:
  * \param right_pot
  *        the address of the right potentiometer
 */
-    DriveTrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot);
+    Drivetrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot);
 
     /**  
  * \return the heading of the robot in degrees (wrapped from 0-360)
@@ -496,8 +495,11 @@ public:
 */
     void setup();
 
+    void run_p_control(double target);
+    void run_bang_control(double target);
+
     /** 
- *        centers on a game tower by using the same algorithms as drive_to_point (allows the robot to keep a constant heading) 
+ *        centers on a game tower by using the same algorithms as drive_to_point (allows the robot to keep a constant heading while moving) 
  * \param angle
  *        the angle the robot will maintain while drivingf
  * \param use_IMU
@@ -507,12 +509,12 @@ public:
  * \param use_pots
  *        will use potentiometers to right the robot's position if set to true
 */
-    void center_on_tower_with_bumper(double angle, bool use_IMU, double timeout = 2000, bool use_pots = false);
+    void center_on_tower_with_bumper(double target_angle, bool use_IMU, double timeout = 2000, bool use_pots = false);
 
     /** 
  *        a destructor to ensure that the drivetrain tasks never outlive the object
 */
-    ~DriveTrain();
+    ~Drivetrain();
 };
 
 #endif
