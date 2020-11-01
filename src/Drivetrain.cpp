@@ -651,7 +651,7 @@ void Drivetrain::drive_to_tower_backboard(double target_angle, double when_to_in
     {
         set_motors(15, -15, 15, -15);
         pros::delay(100);
-        // point_turn_PID(target_angle, use_IMU);
+        point_turn_PID(target_angle, use_IMU);
     }
     stop_drive_motors();
 }
@@ -672,7 +672,6 @@ void Drivetrain::point_turn_PID(double target, bool use_IMU, const double Kp, co
         {
             angle_error = compute_angle_error(convert_deg_to_rad(target), get_constrained_alpha());
         }
-        // angle_error = compute_angle_error(convert_deg_to_rad(target), get_constrained_alpha());
         double motor_power = pid_controller.compute(angle_error);
         printf("%d,%f\n", pros::millis(), angle_error);
         set_turn(motor_power);
@@ -681,52 +680,6 @@ void Drivetrain::point_turn_PID(double target, bool use_IMU, const double Kp, co
     pros::lcd::set_text(0, "pid escaped");
 }
 
-void Drivetrain::run_p_control(double target)
-{
-    PID_controller pid_controller(30, 0, 0, 127, -127);
-    double angle_error;
-    do
-    {
-
-        angle_error = compute_angle_error(convert_deg_to_rad(target), get_constrained_alpha());
-        double motor_power = pid_controller.compute(angle_error);
-
-        set_turn(motor_power);
-        pros::lcd::set_text(4, "the angle error is: " + std::to_string(angle_error * 180 / pi));
-        pros::lcd::set_text(3, "the PID value is: " + std::to_string(motor_power));
-        printf("%d,%d,%f\n", pros::millis(), 0, angle_error * 180 / pi);
-        pros::delay(20);
-    } while (std::abs(pid_controller.get_derivative()) > 0.000000000001 || std::abs(angle_error) > 0.004);
-    pros::lcd::set_text(0, "pid escaped");
-}
-
-void Drivetrain::run_bang_control(double target)
-{
-    PID_controller pid_controller(30, 0, 0, 127, -127);
-    double angle_error;
-    do
-    {
-
-        angle_error = compute_angle_error(convert_deg_to_rad(target), get_constrained_alpha());
-        double motor_power;
-        if (angle_error < 0)
-        {
-            motor_power = 127;
-        }
-        else
-        {
-            motor_power = -127;
-        }
-
-        set_turn(motor_power);
-        pros::lcd::set_text(4, "the angle error is: " + std::to_string(angle_error * 180 / pi));
-        pros::lcd::set_text(3, "the PID value is: " + std::to_string(motor_power));
-        printf("%d,%f\n", pros::millis(), angle_error);
-        pid_controller.compute(angle_error);
-        pros::delay(20);
-    } while (std::abs(pid_controller.get_derivative()) > 0.000000000001 || std::abs(angle_error) > 0.004);
-    pros::lcd::set_text(0, "pid escaped");
-}
 
 void Drivetrain::start_odometry_update_thread()
 {
