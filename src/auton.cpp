@@ -256,7 +256,7 @@ void run_blue_front()
     scorer.set_indexers(127);
 
     // =========== DRIVE TO TOWER SIX ===========
-    drivetrain.drive_to_point(-52.65, 4.14, 317.83, 2, 1, ()[]{scorer.set_intakes(0);}, 10, 3000);
+    drivetrain.drive_to_point(-52.65, 4.14, 317.83, 2, 1, [](){scorer.set_intakes(0);}, 10, 3000);
 
     // =========== SCORE AND COLLECT IN TOWER SIX ===========
     scorer.reset_balls_counted();

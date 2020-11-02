@@ -621,7 +621,7 @@ void Drivetrain::drive_to_tower_backboard(double target_angle, double when_to_in
         else
         {
             pros::lcd::set_text(5, "average error: " + std::to_string(pid_controller.get_error_average(10)));
-            pros::lcd::set_text(2, "X:" + std::to_string(backboard.x_middle_coord) + "f: " + std::to_string(filtered_X) + ")");
+            pros::lcd::set_text(2, "X:" + std::to_string(backboard.x_middle_coord));
             X_error = backboard.x_middle_coord - X_center_position;
         }
 
