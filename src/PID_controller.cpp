@@ -87,7 +87,7 @@ double PID_controller::compute(double new_error, double current_time)
     return PID_value;
 }
 
-void PID_controller::use_integrater_error_bound(double integral_error_limit)
+void PID_controller::use_integrator_error_bound(double integral_error_limit)
 {
     this->integral_error_limit = integral_error_limit;
     use_bounded_error = true;

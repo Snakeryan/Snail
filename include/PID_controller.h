@@ -37,11 +37,11 @@ public:
     double compute(double newError, double current_time = -1);
 
     /**
- *        adds integral when the error value is below an inputed amount
+ *        adds integral when the error value is below an inputted amount
  * \param integral_error_limit
  *        the value that the PID controller will start adding integral
 */
-    void use_integrater_error_bound(double integral_error_limit);
+    void use_integrator_error_bound(double integral_error_limit);
 
     /**
  *        will put the integral value back to zero when the error goes from negative to positive or vice-versa

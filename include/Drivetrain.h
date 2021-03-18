@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <memory>
 #include "main.h"
+#include "scorer.h"
 
 class Drivetrain
 {
@@ -24,7 +25,7 @@ class Drivetrain
     std::shared_ptr<pros::Task>
         odometry_update_task{nullptr};
 
-    // motor/sensors:
+    // motors/sensors:
     pros::Motor *FL;
     pros::Motor *FR;
     pros::Motor *BL;
@@ -44,6 +45,9 @@ class Drivetrain
     pros::ADIAnalogIn *collision_light_sensor;
     pros::ADIAnalogIn *left_pot;
     pros::ADIAnalogIn *right_pot;
+
+    //scorer object
+    Scorer *scorer;
 
     /**
  *        applies motor power to the X-drive motors
@@ -248,7 +252,7 @@ class Drivetrain
     void setup_sensors();
 
     /**
- *        calls start_odometry_update_thread() to create a seperate task for updating the odometry variables
+ *        calls start_odometry_update_thread() to create a separate task for updating the odometry variables
 */
     void make_odometry_update_thread();
 
@@ -278,8 +282,10 @@ public:
  *        the distance away from the target coordinate to activate the function passed in (put 0 to do nothing)
  * \param timeout
  *       the maximum amount of time the robot can spend driving to a point (has default of 10000 milliseconds)
+ * \param is_collect_point
+ *       if set to true, a variable will increment by one if a ball is successfully collected (if ball is not collected, then the robot will try to score one less ball
 */
-    void drive_to_point(double tX, double tY, double target_angle_in_degrees, int point_type = 2, double rotational_KP = 1, const std::function<void()> &trigger = 0, double trigger_distance = 3, double timeout = 10000);
+    void drive_to_point(double tX, double tY, double target_angle_in_degrees, int point_type = 2, double rotational_KP = 1, const std::function<void()> &trigger = 0, double trigger_distance = 3, double timeout = 10000, bool is_collect_point = false);
 
     /** 
  *        will change the global coordinates and the odometry angle to given values
@@ -322,7 +328,7 @@ public:
  * \param right_pot
  *        the address of the right potentiometer
 */
-    Drivetrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot);
+    Drivetrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot, Scorer *scorer);
 
     /**  
  * \return the heading of the robot in degrees (wrapped from 0-360)
@@ -408,12 +414,12 @@ public:
 
     /**
  * \return
- *        boolean seeing if the righ potentiometer is bending
+ *        boolean seeing if the right potentiometer is bending
 */
     bool is_R_pot_bending();
 
     /**
- *        calibrates an Inertial Measurment Unit (IMU) (it is essential to calibrate the IMU before getting readings)
+ *        calibrates an Inertial Measurement Unit (IMU) (it is essential to calibrate the IMU before getting readings)
 */
     void calibrate_IMU();
 
@@ -430,7 +436,7 @@ public:
  * \return 
  *        the degree version of the radian value (method also constrains this version between 0-360)
 */
-    double convert_rad_to_deg_wraped(double rad);
+    double convert_rad_to_deg_wrapped(double rad);
 
     /**
  *        uses this formula: (rad * 180)/pi
@@ -498,7 +504,7 @@ public:
     /** 
  *        centers on a game tower by using the same algorithms as drive_to_point (allows the robot to keep a constant heading while moving) 
  * \param angle
- *        the angle the robot will maintain while drivingf
+ *        the angle the robot will maintain while driving
  * \param use_IMU
  *        boolean for using the IMU (true) or the odometry calculated angle (false)
  * \param timeout

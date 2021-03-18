@@ -3,6 +3,7 @@
 #include "auton.h"
 #include "globals.h"
 #include "PID_controller.h"
+#include "Drivetrain.h"
 
 template <class T>
 const T &constrain(const T &x, const T &a, const T &b)
@@ -19,7 +20,7 @@ const T &constrain(const T &x, const T &a, const T &b)
         return x;
 }
 
-Drivetrain::Drivetrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot)
+Drivetrain::Drivetrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot, Scorer *scorer)
 {
     this->encoder_wheel_radius = encoder_wheel_radius;
     this->wL = wL;
@@ -36,7 +37,7 @@ Drivetrain::Drivetrain(double encoder_wheel_radius, double wL, double wR, double
     this->IMU = IMU;
     this->left_pot = left_pot;
     this->right_pot = right_pot;
-    this->collision_light_sensor = collision_light_sensor;
+    this->scorer = scorer;
 }
 
 double Drivetrain::compute_alpha(double right_encoder_distance, double left_encoder_distance)
@@ -108,7 +109,7 @@ double Drivetrain::compute_delta_globalY(double Dlx, double Dly, double delta_al
     return (Dly * cos(delta_alpha / 2 + prev_alpha)) - (Dlx * sin(delta_alpha / 2 + prev_alpha));
 }
 
-double Drivetrain::convert_rad_to_deg_wraped(double rad)
+double Drivetrain::convert_rad_to_deg_wrapped(double rad)
 {
     double deg = (rad * 180) / pi;
 
@@ -128,8 +129,8 @@ double Drivetrain::convert_rad_to_deg(double rad)
 
 double Drivetrain::get_alpha_in_degrees()
 {
-    // return convert_rad_to_deg_wraped(alpha);
-    return convert_rad_to_deg_wraped(alpha);
+    // return convert_rad_to_deg_wrapped(alpha);
+    return convert_rad_to_deg_wrapped(alpha);
 }
 
 //method to convert from degrees to radians
@@ -227,8 +228,8 @@ void Drivetrain::turn_to_point(double destX, double destY)
     {
         angle += TAU;
     }
-    pros::lcd::set_text(5, "the angle to turn is: " + std::to_string(convert_rad_to_deg_wraped(angle)));
-    (convert_rad_to_deg_wraped(angle));
+    pros::lcd::set_text(5, "the angle to turn is: " + std::to_string(convert_rad_to_deg_wrapped(angle)));
+    (convert_rad_to_deg_wrapped(angle));
 }
 
 /*
@@ -344,7 +345,7 @@ void Drivetrain::run_Xdrive(double T, double S, double R, double K_constant)
     compute_BR_motor_speed(P2, s, K_constant, R, 2);
 }
 
-void Drivetrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, int point_type, double rotational_KP, const std::function<void()> &trigger, double trigger_distance, double timeout)
+void Drivetrain::drive_to_point(double tX, double tY, double target_angle_in_degrees, int point_type, double rotational_KP, const std::function<void()> &trigger, double trigger_distance, double timeout, bool is_collect_point)
 {
     //configuration:
     //hyperparameters:
@@ -377,10 +378,10 @@ void Drivetrain::drive_to_point(double tX, double tY, double target_angle_in_deg
     PID_controller S_controller(1 / (slow_down_distance_threshold * 1.6), 0.0015, 0, 1, 0.1);
 
     //constraining integral for S_controller:
-    S_controller.use_integrater_error_bound(3);
+    S_controller.use_integrator_error_bound(3);
     S_controller.use_crossover_zero();
 
-    // utilities:
+    // utilities:8
     double start_time = pros::millis();
     double initial_distance_error = sqrt(pow(tX - globalX, 2) + pow(tY - globalY, 2));
     double target_angle = convert_deg_to_rad(target_angle_in_degrees);
@@ -388,7 +389,7 @@ void Drivetrain::drive_to_point(double tX, double tY, double target_angle_in_deg
 
     //flag to see if the trigger function has activated
     bool trigger_activated = false;
-
+    // scorer->count_balls_to_score(is_collect_point);
     do
     {
         // variables that calculate the error in the X coordinate, Y coordinate, and angle:
@@ -426,7 +427,7 @@ void Drivetrain::drive_to_point(double tX, double tY, double target_angle_in_deg
         if (use_motion_profiling)
         {
             double millis = pros::millis() - start_time;
-            if (speed_up_time != 0 && millis < speed_up_time && abs(current_distance_error) > slow_down_distance_threshold)
+            if (speed_up_time != 0 && millis < speed_up_time && std::abs(current_distance_error) > slow_down_distance_threshold)
             {
                 S = millis / speed_up_time;
                 // if (use_limited_acceleration)
@@ -495,6 +496,7 @@ bool Drivetrain::is_R_pot_bending()
     double R_pot_error = R_pot_threshold - right_pot->get_value();
     return R_pot_error < -100;
 }
+
 
 void Drivetrain::center_on_tower_with_bumper(double target_angle, bool use_IMU, double timeout, bool use_pots)
 {
@@ -608,7 +610,7 @@ void Drivetrain::drive_to_tower_backboard(double target_angle, double when_to_in
     PID_controller pid_controller(0.012, 0.0002, 0, 1, 0); //0.000097
 
     pid_controller.use_crossover_zero();
-    pid_controller.use_integrater_error_bound(when_to_include_integral); //first time == 3, second time == 7, third time == 7
+    pid_controller.use_integrator_error_bound(when_to_include_integral); //first time == 3, second time == 7, third time == 7
     double S;
     do
     {
@@ -659,7 +661,7 @@ void Drivetrain::drive_to_tower_backboard(double target_angle, double when_to_in
 void Drivetrain::point_turn_PID(double target, bool use_IMU, const double Kp, const double Ki, const double Kd)
 {
     PID_controller pid_controller(Kp, Ki, Kd, 127, -127);
-    pid_controller.use_integrater_error_bound(convert_deg_to_rad(5));
+    pid_controller.use_integrator_error_bound(convert_deg_to_rad(5));
     pid_controller.use_crossover_zero();
     double angle_error;
     do
@@ -764,7 +766,7 @@ void filter_IMU()
 
 double Drivetrain::get_IMU_heading()
 {
-    return convert_rad_to_deg_wraped(IMU_heading);
+    return convert_rad_to_deg_wrapped(IMU_heading);
 }
 
 void Drivetrain::setup_sensors()

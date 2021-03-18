@@ -5,7 +5,7 @@
 bool is_disabled;
 
 //object of class DriveTrain:
-Drivetrain drivetrain(1.375, 7.02739575, 7.02739575, 7.02739575, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM, &vision_sensor, &IMU, &left_pot, &right_pot);
+Drivetrain drivetrain(1.375, 7.02739575, 7.02739575, 7.02739575, &FL, &FR, &BL, &BR, &encoderL, &encoderR, &encoderM, &vision_sensor, &IMU, &left_pot, &right_pot, &scorer);
 
 //object of class Scorer:
 Scorer scorer(&intakeleft, &intakeright, &indexer, &flywheel, &vision_sensor, &BLUE_BALL_SIGNATURE, &RED_BALL_SIGNATURE, &lower_counter_light_sensor, &upper_counter_light_sensor, &dispense_counter_light_sensor, &middle_light_sensor);
@@ -27,7 +27,7 @@ pros::Motor BL(11, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_COUNTS
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
 //Sensors
-pros::ADIEncoder encoderL('C', 'D', true);
+pros::ADIEncoder encoderL('C', 'D', false);
 pros::ADIEncoder encoderM('G', 'H', false);
 pros::ADIEncoder encoderR('E', 'F', false);
 

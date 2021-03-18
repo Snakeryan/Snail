@@ -5,53 +5,48 @@
 #include "Drivetrain.h"
 #include "globals.h"
 #include "autoSelect/selection.h"
+#include "pros/rtos.hpp"
+
 void display_data()
 {
 	pros::vision_object_s_t backboard = vision_sensor.get_by_size(0);
 	while (true)
 	{
-
 		backboard = vision_sensor.get_by_size(0);
-		// pros::lcd::set_text(1, "(X, Y): (" + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")");
+
+		// odometry coordinates and the robot's heading:
+		pros::lcd::set_text(1, "(X, Y): (" + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")");
 		// pros::lcd::set_text(2, "alpha: " + std::to_string(drivetrain.get_alpha_in_degrees()));
-
-		// pros::lcd::set_text(2, "lower light counter: " + std::to_string(scorer.get_lower_balls_counted()));
-		// pros::lcd::set_text(3, "lower light: " + std::to_string(scorer.get_lower_light_calibrated_value()));
-
-		// pros::lcd::set_text(2, "collision light: " + std::to_string(collision_light_sensor.get_value_calibrated()));
-		// pros::lcd::set_text(7, std::to_string((int)FL.get_temperature()) + "; " + std::to_string((int)FR.get_temperature()) + "; " + std::to_string((int)BL.get_temperature()) + "; " + std::to_string((int)BR.get_temperature()));
-		// pros::lcd::set_text(0, "indexer:" + std::to_string((int)indexer.get_temperature()) + "; flywheel:" + std::to_string((int)flywheel.get_temperature()));
-		
-		// pros::lcd::set_text(6, "upper_balls: " + std::to_string(scorer.get_upper_balls_counted()));
-		// pros::lcd::set_text(6, "exposure: " + std::to_string(vision_sensor.get_exposure()));
 		// pros::lcd::set_text(4, "i: " + std::to_string(IMU.get_heading()) + "a: " + std::to_string(drivetrain.get_alpha_in_degrees()));
-
 		// pros::lcd::set_text(4, "i norm: " + std::to_string(IMU.get_heading()) + "a: " + std::to_string(drivetrain.get_alpha_in_degrees()));
 
-		double calculation = (drivetrain.get_left_encoder_distance() - drivetrain.get_right_encoder_distance()) / (20 * pi);
-		// pros::lcd::set_text(5, "M_encoder: " + std::to_string(drivetrain.get_middle_encoder_distance()));
-		// pros::lcd::set_text(6, "L_encoder: " + std::to_string(drivetrain.get_left_encoder_distance()));
-		// pros::lcd::set_text(7, "R_encoder: " + std::to_string(drivetrain.get_right_encoder_distance()));
-		// pros::lcd::set_text(2, "calculation: " + std::to_string(calculation));
-		// pros::lcd::set_text(6, "pot_L: " + std::to_string(left_pot.get_value()));
-		pros::lcd::set_text(0, "num_balls_counted: " + std::to_string(scorer.get_dispense_light_calibrated_value()));
-		pros::lcd::set_text(1, "num_balls_counted: " + std::to_string(scorer.get_dispense_balls_counted()));
-		pros::lcd::set_text(2, "num_balls_counted: " + std::to_string(scorer.get_dispense_balls_counted()));
-		pros::lcd::set_text(3, "num_balls_counted: " + std::to_string(scorer.get_dispense_balls_counted()));
-		pros::lcd::set_text(4, "num_balls_counted: " + std::to_string(scorer.get_dispense_balls_counted()));
-		pros::lcd::set_text(5, "num_balls_counted: " + std::to_string(scorer.get_dispense_balls_counted()));
-		pros::lcd::set_text(6, "num_balls_counted: " + std::to_string(scorer.get_dispense_balls_counted()));
-		pros::lcd::set_text(7, "num_balls_counted: " + std::to_string(scorer.get_dispense_light_calibrated_value()));
-
-
+		// light sensor values:
+		pros::lcd::set_text(2, "lower light counter: " + std::to_string(scorer.get_lower_balls_counted()));
+		pros::lcd::set_text(3, "lower light: " + std::to_string(scorer.get_lower_light_calibrated_value()));
 		// pros::lcd::set_text(5, "upper light: " + std::to_string(scorer.get_upper_light_calibrated_value()));
+		// pros::lcd::set_text(2, "collision light: " + std::to_string(collision_light_sensor.get_value_calibrated()));
 
+		// motor temperatures:
+		pros::lcd::set_text(7, std::to_string((int)FL.get_temperature()) + "; " + std::to_string((int)FR.get_temperature()) + "; " + std::to_string((int)BL.get_temperature()) + "; " + std::to_string((int)BR.get_temperature()));
+		pros::lcd::set_text(0, "indexer:" + std::to_string((int)indexer.get_temperature()) + "; flywheel:" + std::to_string((int)flywheel.get_temperature()));
+
+		//ball counters:
+		// pros::lcd::set_text(6, "upper_balls: " + std::to_string(scorer.get_upper_balls_counted()));
+		pros::lcd::set_text(1, "balls_to_score: " + std::to_string(scorer.get_balls_to_score()));
+
+		// encoders:
+		// double calculation = (drivetrain.get_left_encoder_distance() - drivetrain.get_right_encoder_distance()) / (20 * pi);
+		pros::lcd::set_text(5, "M_encoder: " + std::to_string(drivetrain.get_middle_encoder_distance()));
+		// pros::lcd::set_text(6, "L_encoder: " + std::to_string(drivetrain.get_left_encoder_distance()));
+		pros::lcd::set_text(7, "R_encoder: " + std::to_string(drivetrain.get_right_encoder_distance()));
+		// pros::lcd::set_text(2, "calculation: " + std::to_string(calculation));
+
+		// potentiometer values:
 		// pros::lcd::set_text(6, "pot_L: " + std::to_string(left_pot.get_value()));
 		// pros::lcd::set_text(5, "pot_R :" + std::to_string(right_pot.get_value()));
 
+		// vision object x position
 		// pros::lcd::set_text(1, "vision X coordinate:" + std::to_string(backboard.x_middle_coord));
-
-		// printf("%d,%d,%f\n", pros::millis(), backboard.x_middle_coord, vision_estimate);
 		pros::Task::delay(20);
 	}
 }
@@ -173,7 +168,7 @@ lower indexers down (R2)
 void run_macros()
 {
 	const int upper_light_sensor_threshold = 1200, middle_light_sensor_threshold = 2200;
-
+	int prev_y = 0;
 	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
 	{
 		scorer.set_intakes(127);
@@ -187,6 +182,12 @@ void run_macros()
 		scorer.set_intakes(0);
 	}
 
+
+    if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_Y) == 1 && prev_y == 0)
+    {
+		run_skills();
+    }
+
 	// If both buttons are pressed and limit switch is detected: stop indexer
 	// If only B is pressed: reverse indexer
 	// If only L2 is pressed: indexer
@@ -194,9 +195,31 @@ void run_macros()
 
 	if (((scorer.get_upper_light_calibrated_value() < upper_light_sensor_threshold || scorer.get_middle_light_calibratred_value() < middle_light_sensor_threshold) && controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) && controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
 	{
-		scorer.set_indexers(0);
+		// scorer.set_indexers(0);
+		double delay_time = pros::millis() + 150;
+    	while (pros::millis() < delay_time)
+    	{
+        	if (scorer.get_upper_light_calibrated_value() < 1200)
+        	{
+         		break;
+        	}
+		}
+		// scorer.set_flywheel(-30);
 		pros::delay(50);
 	}
+	// else if((scorer.get_upper_light_calibrated_value() < upper_light_sensor_threshold && controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2) && controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)))
+	// {
+	// 	double delay_time = pros::millis() + 150;
+    // 	while (pros::millis() < delay_time)
+    // 	{
+    //     	if (scorer.get_upper_light_calibrated_value() < 1200)
+    //     	{
+    //      		break;
+    //     	}
+    // 	}
+	// 	scorer.set_flywheel(-30)
+	// 	pros::delay(50);
+	// }
 	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
 	{
 		scorer.set_indexers(127);
