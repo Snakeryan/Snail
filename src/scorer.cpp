@@ -241,7 +241,7 @@ void Scorer::score_in_goal_with_light(int num_balls, int time_taken_per_ball, bo
 
     while (is_more_balls ? upper_balls_counted < 1 && pros::millis() < one_timeout : upper_balls_counted < num_balls && pros::millis() < timeout)
     {
-        if (get_upper_light_calibrated_value() < 1200) // || get_middle_light_calibratred_value() < 2200)
+        if (get_upper_light_calibrated_value() < 1400) // || get_middle_light_calibratred_value() < 2200)
         {
             
             set_indexers(0);
@@ -259,11 +259,11 @@ void Scorer::score_in_goal_with_light(int num_balls, int time_taken_per_ball, bo
 
         pros::delay(300);
         set_indexers(indexer_speed);
-        while (get_middle_light_calibratred_value() > 2000)
-        {
-          set_indexers(indexer_speed);
-          timeout++;
-        }
+        // while (get_middle_light_calibratred_value() > 2000)
+        // {
+        //   set_indexers(indexer_speed);
+        //   timeout++;
+        // }
         set_indexers(0);
         set_flywheel(flywheel_speed);
         while (num_balls == 3 ? upper_balls_counted < num_balls - 1 : num_balls && num_balls == 3 ? pros::millis() < timeout - time_taken_per_ball : pros::millis() < timeout)

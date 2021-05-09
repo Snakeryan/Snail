@@ -32,7 +32,7 @@ void display_data()
 		// pros::lcd::set_text(0, "indexer:" + std::to_string((int)indexer.get_temperature()) + "; flywheel:" + std::to_string((int)flywheel.get_temperature()));
 
 		//ball counters:
-		// pros::lcd::set_text(6, "upper_balls: " + std::to_string(scorer.get_upper_balls_counted()));
+		pros::lcd::set_text(6, "upper_balls: " + std::to_string(scorer.get_upper_balls_counted()));
 		// pros::lcd::set_text(5, "middle_balls_counted: " + std::to_string(scorer.get_middle_light_calibratred_value()));
 		// pros::lcd::set_text(1, "balls_to_score: " + std::to_string(scorer.get_balls_to_score()));
 		
@@ -40,9 +40,9 @@ void display_data()
 		// encoders:
 		// double side_encoder_calculation = (drivetrain.get_left_encoder_distance() - drivetrain.get_right_encoder_distance()) / (20 * pi);
 		// double back_encoder_calculation = (drivetrain.get_middle_encoder_distance() / (20*pi)) - 1.375 ;
-		pros::lcd::set_text(2, "M_encoder: " + std::to_string(drivetrain.get_middle_encoder_distance()));
-		pros::lcd::set_text(6, "L_encoder: " + std::to_string(drivetrain.get_left_encoder_distance()));
-		pros::lcd::set_text(7, "R_encoder: " + std::to_string(drivetrain.get_right_encoder_distance()));
+		// pros::lcd::set_text(2, "M_encoder: " + std::to_string(drivetrain.get_middle_encoder_distance()));
+		// pros::lcd::set_text(6, "L_encoder: " + std::to_string(drivetrain.get_left_encoder_distance()));
+		// pros::lcd::set_text(7, "R_encoder: " + std::to_string(drivetrain.get_right_encoder_distance()));
 		// pros::lcd::set_text(4,  "calculation: " + std::to_string(back_encoder_calculation));
 
 		// potentiometer values:
