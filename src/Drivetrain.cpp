@@ -4,6 +4,7 @@
 #include "globals.h"
 #include "PID_controller.h"
 #include "Drivetrain.h"
+#include "pros/llemu.hpp"
 
 template <class T>
 const T &constrain(const T &x, const T &a, const T &b)
@@ -20,7 +21,7 @@ const T &constrain(const T &x, const T &a, const T &b)
         return x;
 }
 
-Drivetrain::Drivetrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot, Scorer *scorer)
+Drivetrain::Drivetrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::Rotation *encoderL, pros::Rotation *encoderR, pros::Rotation *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot, Scorer *scorer)
 {
     this->encoder_wheel_radius = encoder_wheel_radius;
     this->wL = wL;
@@ -50,17 +51,17 @@ double Drivetrain::compute_alpha(double right_encoder_distance, double left_enco
 
 double Drivetrain::get_left_encoder_distance()
 {
-    return ((2 * encoder_wheel_radius * pi) / 360) * encoderL->get_value();
+    return ((2 * encoder_wheel_radius * pi) / 36000) * encoderL->get_position();
 }
 
 double Drivetrain::get_right_encoder_distance()
 {
-    return ((2 * encoder_wheel_radius * pi) / 360) * encoderR->get_value();
+    return ((2 * encoder_wheel_radius * pi) / 36000) * encoderR->get_position();
 }
 
 double Drivetrain::get_middle_encoder_distance()
 {
-    return ((2 * encoder_wheel_radius * pi) / 360) * encoderM->get_value();
+    return ((2 * encoder_wheel_radius * pi) / 36000) * encoderM->get_position();
 }
 
 //method to compute alpha (should also average it with the imu readings)
@@ -781,7 +782,11 @@ void Drivetrain::setup_sensors()
 
 void Drivetrain::setup()
 {
-    setup_sensors();
+    // setup_sensors();
+    encoderL->reset_position();
+    encoderM->reset_position();
+    encoderM->reverse();
+    encoderR->reset_position();
     make_odometry_update_thread();
 }
 

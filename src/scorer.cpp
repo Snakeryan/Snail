@@ -36,13 +36,32 @@ void Scorer::run_lower_light_sensor()
     prev_lower_light_value = get_lower_light_calibrated_value();
 }
 
+void Scorer::run_middle_light_sensor()
+{
+    // makes the upper_balls_counted only go up when it is greater than 100 milliseconds:
+    double delay_time = 100;
+
+    // value that the light sensor crosses to know if a ball has exited its field of detection:
+    double light_sensor_threshold = 2000;
+
+    // making a variable that stores the previous value of the limit switch:
+
+    if ((get_middle_light_calibratred_value() < light_sensor_threshold && prev_middle_light_value > light_sensor_threshold) && std::abs(prev_middle_light_value - pros::millis()) > delay_time)
+    {
+        middle_balls_counted++;
+        middle_prev_time = pros::millis();
+    }
+
+    prev_middle_light_value = get_middle_light_calibratred_value();
+}
+
 void Scorer::run_upper_light_sensor()
 {
     // makes the upper_balls_counted only go up when it is greater than 100 milliseconds:
     double delay_time = 100;
 
     // value that the light sensor crosses to know if a ball has exited its field of detection:
-    double light_sensor_threshold = 1200;
+    double light_sensor_threshold = 1400;
 
     // logic to make an upper counting system for balls that have exited our loop:
     if ((get_upper_light_calibrated_value() > light_sensor_threshold && prev_upper_light_value < light_sensor_threshold) && std::abs(upper_prev_time - pros::millis()) > delay_time)
@@ -114,6 +133,7 @@ void Scorer::start_auton_sensors_update_thread()
         run_upper_light_sensor();
         run_lower_light_sensor();
         run_dispense_light_sensor();
+        run_middle_light_sensor();
         pros::Task::delay(20);
     }
 }
@@ -214,10 +234,12 @@ void Scorer::score_in_goal_with_light(int num_balls, int time_taken_per_ball, bo
   }
 
 
-  double timeout = pros::millis() + (abs(num_balls - upper_balls_counted) * time_taken_per_ball);
+  double timeout = pros::millis() +
+                   (abs(num_balls - upper_balls_counted) * time_taken_per_ball);
+  double one_timeout = pros::millis() + time_taken_per_ball;
 
 
-    while (is_more_balls ? upper_balls_counted < num_balls-1 && pros::millis() < timeout - time_taken_per_ball : upper_balls_counted < num_balls && pros::millis() < timeout)
+    while (is_more_balls ? upper_balls_counted < 1 && pros::millis() < one_timeout : upper_balls_counted < num_balls && pros::millis() < timeout)
     {
         if (get_upper_light_calibrated_value() < 1200) // || get_middle_light_calibratred_value() < 2200)
         {
@@ -226,6 +248,7 @@ void Scorer::score_in_goal_with_light(int num_balls, int time_taken_per_ball, bo
             pros::delay(50);
         }
         else
+        
         {
             is_more_balls ? set_indexers(0) : set_indexers(127);
         }
@@ -233,12 +256,17 @@ void Scorer::score_in_goal_with_light(int num_balls, int time_taken_per_ball, bo
     }
 
     if (is_more_balls) {
-      pros::delay(400);
-      set_flywheel(-127);
-      pros::delay(400);
-      set_indexers(indexer_speed);
-      set_flywheel(flywheel_speed);
-        while (upper_balls_counted < num_balls && pros::millis() < timeout)
+
+        pros::delay(300);
+        set_indexers(indexer_speed);
+        while (get_middle_light_calibratred_value() > 2000)
+        {
+          set_indexers(indexer_speed);
+          timeout++;
+        }
+        set_indexers(0);
+        set_flywheel(flywheel_speed);
+        while (num_balls == 3 ? upper_balls_counted < num_balls - 1 : num_balls && num_balls == 3 ? pros::millis() < timeout - time_taken_per_ball : pros::millis() < timeout)
         {
         if (get_upper_light_calibrated_value() < 1200) // || get_middle_light_calibratred_value() < 2200)
         {
@@ -248,13 +276,37 @@ void Scorer::score_in_goal_with_light(int num_balls, int time_taken_per_ball, bo
 
         else
         {
-          set_indexers(indexer_speed);
           set_flywheel(flywheel_speed);
         }
             pros::delay(10);
-          }
+        }
+
+        if (num_balls == 3) {
+          pros::delay(250);
+            // set_indexers(indexer_speed);
+            while (get_middle_light_calibratred_value() > 2000)
+            {
+                set_indexers(indexer_speed);
+                timeout++;
+            }
+            set_indexers(0);
+            set_flywheel(flywheel_speed);
+            while (upper_balls_counted < num_balls && pros::millis() < timeout + 1000)
+            {
+                if (get_upper_light_calibrated_value() < 1200) // || get_middle_light_calibratred_value() < 2200)
+                {
+                    set_indexers(0);
+                    pros::delay(50);
+                }
+                else
+                {
+                set_flywheel(flywheel_speed);
+                }
+                    pros::delay(10);
+                }
+        }
     }
-        double delay_time = pros::millis() + 150;
+    double delay_time = pros::millis() + 150;
     while (pros::millis() < delay_time)
     {
         if (get_upper_light_calibrated_value() < 1200)
@@ -299,6 +351,7 @@ void Scorer::reset_balls_counted()
 {
     upper_balls_counted = 0;
     lower_balls_counted = 0;
+    middle_balls_counted = 0;
     dispense_balls_counted = 0;
 }
 
@@ -343,6 +396,11 @@ void Scorer::reset_balls_to_score()
 double Scorer::get_lower_balls_counted()
 {
     return lower_balls_counted;
+}
+
+double Scorer::get_middle_balls_counted()
+{
+    return middle_balls_counted;
 }
 
 double Scorer::get_upper_balls_counted()

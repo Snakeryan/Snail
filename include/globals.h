@@ -43,13 +43,14 @@ extern pros::Motor BL;
 
 //controller:
 
-extern pros::Controller controller;
+extern pros::Controller controller1;
+extern pros::Controller controller2;
 
 //encoders:
 
-extern pros::ADIEncoder encoderL;
-extern pros::ADIEncoder encoderM;
-extern pros::ADIEncoder encoderR;
+extern pros::Rotation encoderL;
+extern pros::Rotation encoderM;
+extern pros::Rotation encoderR;
 
 //sensors:
 extern pros::Imu IMU;

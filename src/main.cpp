@@ -6,6 +6,7 @@
 #include "globals.h"
 #include "autoSelect/selection.h"
 #include "pros/rtos.hpp"
+#include <string>
 
 void display_data()
 {
@@ -15,31 +16,34 @@ void display_data()
 		backboard = vision_sensor.get_by_size(0);
 
 		// odometry coordinates and the robot's heading:
-		pros::lcd::set_text(1, "(X, Y): (" + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")");
+	
 		// pros::lcd::set_text(2, "alpha: " + std::to_string(drivetrain.get_alpha_in_degrees()));
-		// pros::lcd::set_text(4, "i: " + std::to_string(IMU.get_heading()) + "a: " + std::to_string(drivetrain.get_alpha_in_degrees()));
+		pros::lcd::set_text(4, "i: " + std::to_string(IMU.get_heading()) + " a: " + std::to_string(drivetrain.get_alpha_in_degrees()));
 		// pros::lcd::set_text(4, "i norm: " + std::to_string(IMU.get_heading()) + "a: " + std::to_string(drivetrain.get_alpha_in_degrees()));
 
 		// light sensor values:
-		pros::lcd::set_text(2, "lower light counter: " + std::to_string(scorer.get_lower_balls_counted()));
+		// pros::lcd::set_text(2, "lower light counter: " + std::to_string(scorer.get_lower_balls_counted()));
 		pros::lcd::set_text(3, "lower light: " + std::to_string(scorer.get_lower_light_calibrated_value()));
-		// pros::lcd::set_text(5, "upper light: " + std::to_string(scorer.get_upper_light_calibrated_value()));
+		pros::lcd::set_text(5, "upper light: " + std::to_string(scorer.get_upper_light_calibrated_value()));
 		// pros::lcd::set_text(2, "collision light: " + std::to_string(collision_light_sensor.get_value_calibrated()));
 
 		// motor temperatures:
-		pros::lcd::set_text(7, std::to_string((int)FL.get_temperature()) + "; " + std::to_string((int)FR.get_temperature()) + "; " + std::to_string((int)BL.get_temperature()) + "; " + std::to_string((int)BR.get_temperature()));
-		pros::lcd::set_text(0, "indexer:" + std::to_string((int)indexer.get_temperature()) + "; flywheel:" + std::to_string((int)flywheel.get_temperature()));
+		// pros::lcd::set_text(7, std::to_string((int)FL.get_temperature()) + "; " + std::to_string((int)FR.get_temperature()) + "; " + std::to_string((int)BL.get_temperature()) + "; " + std::to_string((int)BR.get_temperature()));
+		// pros::lcd::set_text(0, "indexer:" + std::to_string((int)indexer.get_temperature()) + "; flywheel:" + std::to_string((int)flywheel.get_temperature()));
 
 		//ball counters:
 		// pros::lcd::set_text(6, "upper_balls: " + std::to_string(scorer.get_upper_balls_counted()));
-		pros::lcd::set_text(1, "balls_to_score: " + std::to_string(scorer.get_balls_to_score()));
+		// pros::lcd::set_text(5, "middle_balls_counted: " + std::to_string(scorer.get_middle_light_calibratred_value()));
+		// pros::lcd::set_text(1, "balls_to_score: " + std::to_string(scorer.get_balls_to_score()));
+		
 
 		// encoders:
-		// double calculation = (drivetrain.get_left_encoder_distance() - drivetrain.get_right_encoder_distance()) / (20 * pi);
-		pros::lcd::set_text(5, "M_encoder: " + std::to_string(drivetrain.get_middle_encoder_distance()));
-		// pros::lcd::set_text(6, "L_encoder: " + std::to_string(drivetrain.get_left_encoder_distance()));
+		// double side_encoder_calculation = (drivetrain.get_left_encoder_distance() - drivetrain.get_right_encoder_distance()) / (20 * pi);
+		// double back_encoder_calculation = (drivetrain.get_middle_encoder_distance() / (20*pi)) - 1.375 ;
+		pros::lcd::set_text(2, "M_encoder: " + std::to_string(drivetrain.get_middle_encoder_distance()));
+		pros::lcd::set_text(6, "L_encoder: " + std::to_string(drivetrain.get_left_encoder_distance()));
 		pros::lcd::set_text(7, "R_encoder: " + std::to_string(drivetrain.get_right_encoder_distance()));
-		// pros::lcd::set_text(2, "calculation: " + std::to_string(calculation));
+		// pros::lcd::set_text(4,  "calculation: " + std::to_string(back_encoder_calculation));
 
 		// potentiometer values:
 		// pros::lcd::set_text(6, "pot_L: " + std::to_string(left_pot.get_value()));
@@ -94,8 +98,9 @@ void on_center_button()
 void calibrate_sensors()
 {
 	upper_counter_light_sensor.calibrate();
-	dispense_counter_light_sensor.calibrate();
-	middle_light_sensor.calibrate();
+        dispense_counter_light_sensor.calibrate();
+        lower_counter_light_sensor.calibrate();
+	// middle_light_sensor.calibrate();
 	drivetrain.calibrate_IMU();
 }
 
@@ -169,11 +174,11 @@ void run_macros()
 {
 	const int upper_light_sensor_threshold = 1200, middle_light_sensor_threshold = 2200;
 	int prev_y = 0;
-	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
+	if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_L1) || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
 	{
 		scorer.set_intakes(127);
 	}
-	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN))
+	else if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN) || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN))
 	{
 		scorer.set_intakes(-63);
 	}
@@ -183,7 +188,7 @@ void run_macros()
 	}
 
 
-    if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_Y) == 1 && prev_y == 0)
+    if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_Y) == 1 || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_Y) == 1  && prev_y == 0)
     {
 		run_skills();
     }
@@ -193,7 +198,7 @@ void run_macros()
 	// If only L2 is pressed: indexer
 	// Else: stop indexer
 
-	if (((scorer.get_upper_light_calibrated_value() < upper_light_sensor_threshold || scorer.get_middle_light_calibratred_value() < middle_light_sensor_threshold) && controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) && controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
+	if ((scorer.get_upper_light_calibrated_value() < upper_light_sensor_threshold || scorer.get_middle_light_calibratred_value() < middle_light_sensor_threshold) && (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_R2) && controller1.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) || (controller2.get_digital(pros::E_CONTROLLER_DIGITAL_R2) && controller2.get_digital(pros::E_CONTROLLER_DIGITAL_L2)))
 	{
 		// scorer.set_indexers(0);
 		double delay_time = pros::millis() + 150;
@@ -220,11 +225,11 @@ void run_macros()
 	// 	scorer.set_flywheel(-30)
 	// 	pros::delay(50);
 	// }
-	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
+	else if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_L2) || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
 	{
 		scorer.set_indexers(127);
 	}
-	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B))
+	else if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_B) || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_B))
 	{
 		scorer.set_indexers(-127);
 	}
@@ -234,12 +239,12 @@ void run_macros()
 		scorer.set_indexers(0);
 	}
 
-	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
+	if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_R1) || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
 	{
 		// flywheel negative, manual dispensing
 		scorer.set_flywheel(-127);
 	}
-	else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
+	else if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_R2) || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
 	{
 		//flywheel positive, shooting
 		scorer.set_flywheel(127);
@@ -248,29 +253,30 @@ void run_macros()
 	{
 		scorer.set_flywheel(0);
 	}
-	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B))
+	if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_B) || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_B))
 	{
 		printf("drivetrain.drive_to_point(%.2f, %.2f, %.2f, false, true);\n", drivetrain.get_globalX(), drivetrain.get_globalY(), drivetrain.get_alpha_in_degrees());
 		// (4, "drivetrain.drive_to_point( " + std::to_string(drivetrain.get_globalX()) + ", " + std::to_string(drivetrain.get_globalY()) + ")" + std::to_string(drivetrain.get_alpha_in_degrees()));
 		pros::delay(200);
 	}
-	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X))
+	if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_X) || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_B))
 	{
 		printf("drivetrain.drive_to_point(%.2f, %.2f, %.2f, false, false);\n", drivetrain.get_globalX(), drivetrain.get_globalY(), drivetrain.get_alpha_in_degrees());
 		pros::delay(200);
 	}
-	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A))
+	if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_A) || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_B))
 	{
-		controller.print(0, 0, "(%.2f, %.2f)", drivetrain.get_globalX(), drivetrain.get_globalY());
+		controller1.print(0, 0, "(%.2f, %.2f)", drivetrain.get_globalX(), drivetrain.get_globalY());
 		pros::delay(50);
-		controller.print(1, 0, "A: %.2f I: %.2f", drivetrain.get_alpha_in_degrees(), drivetrain.get_IMU_heading());
+		controller1.print(1, 0, "A: %.2f I: %.2f", drivetrain.get_alpha_in_degrees(), drivetrain.get_IMU_heading());
 		pros::delay(50);
-		controller.print(2, 0, "Battery: %.2f", controller.get_battery_level());
+		controller1.print(2, 0, "Battery: %.2f", controller1.get_battery_level());
 		pros::delay(50);
 	}
 	else
 	{
-		controller.clear();
+		controller1.clear();
+		controller2.clear();
 	}
 }
 
@@ -280,9 +286,9 @@ void opcontrol()
 	// drivetrain.set_current_global_position(16.077751092179696, 63.107507307056174, 90);
 	while (true)
 	{
-		drivetrain.driver_control(controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y),
-								  controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X),
-								  controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X));
+		drivetrain.driver_control(controller1.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) + controller2.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y),
+								  controller1.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X) + controller2.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X),
+								  controller1.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X) + controller2.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X));
 		run_macros();
 		// pros::lcd::set_text(5, std::to_string(pros::millis()));
 		pros::delay(20);

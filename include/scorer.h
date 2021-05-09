@@ -11,9 +11,9 @@ class Scorer
     std::shared_ptr<pros::Task> intake_manager_task{nullptr};
 
     // counters for the balls entering and exiting our loop and upper balls:
-    int lower_balls_counted, upper_balls_counted, dispense_balls_counted = 0;
+    int lower_balls_counted, upper_balls_counted, dispense_balls_counted, middle_balls_counted = 0;
 
-    double prev_light_value, prev_upper_light_value, prev_dispense_light_value, prev_lower_light_value, upper_prev_time, dispense_prev_time, prev_time, lower_prev_time, num_balls_to_score, num_balls_to_collect, intake_speed, flywheel_speed, indexer_speed, num_balls_to_dispense, num_balls_to_dispense_through_intakes, time_taken_per_ball, balls_to_score = 0;
+    double prev_light_value, prev_upper_light_value, prev_dispense_light_value, prev_lower_light_value, prev_middle_light_value, upper_prev_time, dispense_prev_time, prev_time, lower_prev_time, middle_prev_time, num_balls_to_score, num_balls_to_collect, intake_speed, flywheel_speed, indexer_speed, num_balls_to_dispense, num_balls_to_dispense_through_intakes, time_taken_per_ball, balls_to_score = 0;
 
     bool is_ball_collect_point, is_more_balls;
     //pointer objects of all of the motors that are not part of the drivetrain:
@@ -54,9 +54,14 @@ class Scorer
     void run_upper_light_sensor();
 
     /**
- *        will eventually want to implement this to eliminate redundancies
+ *        will eventually implement this to eliminate redundancies
 */
     void setup_light_counter(double light_sensor_threshold, double light_calibrated_value, double counter);
+
+     /**
+ *        makes a middle counter with a light sensor (use this to turn off the indexers when the ball reaches the flywheel)
+*/
+    void run_middle_light_sensor();
 
     /**
  *        makes a dispense counter with a light sensor (use this to know how many balls have exited the robot's dispenser)
@@ -252,6 +257,13 @@ public:
  *        the current value of lower_balls_counted
 */
     double get_lower_balls_counted();
+
+        /**
+ * \return
+ *        the current value of middle_balls_counted
+*/
+    double get_middle_balls_counted();
+
 
     /**
  * \return

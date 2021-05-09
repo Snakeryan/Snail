@@ -38,13 +38,9 @@ void run_homerow()
 
 void test_mode()
 {
-  scorer.reset_balls_to_score();
-  scorer.reset_balls_counted();
-    // scorer.set_intakes(127
-
-    // drivetrain.drive_to_point(0, 10, 0, 2, 1, NULL, 0, 10000, true);
-    scorer.score_n_balls(3, 1250, true);
-    scorer.wait_until_number_of_upper_balls_counted(3);
+    drivetrain.drive_to_point(0, 50, 0, 1, 3);
+    drivetrain.drive_to_point(0, -50, 0, 1, 3);
+    drivetrain.stop_drive_motors();
 }
 
 void run_skills_start()
@@ -399,6 +395,7 @@ void run_skills()
         scorer.set_intakes(0);
         scorer.set_flywheel(0);
         scorer.set_indexers(0);
+        drivetrain.stop_drive_motors();
         return;
     }
 

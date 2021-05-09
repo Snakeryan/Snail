@@ -31,9 +31,9 @@ class Drivetrain
     pros::Motor *BL;
     pros::Motor *BR;
 
-    pros::ADIEncoder *encoderL;
-    pros::ADIEncoder *encoderR;
-    pros::ADIEncoder *encoderM;
+    pros::Rotation *encoderL;
+    pros::Rotation *encoderR;
+    pros::Rotation *encoderM;
 
     pros::Vision *vision_sensor;
     pros::vision_signature_s_t BLUE_BALL_SIGNATURE;
@@ -328,7 +328,7 @@ public:
  * \param right_pot
  *        the address of the right potentiometer
 */
-    Drivetrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::ADIEncoder *encoderL, pros::ADIEncoder *encoderR, pros::ADIEncoder *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot, Scorer *scorer);
+    Drivetrain(double encoder_wheel_radius, double wL, double wR, double wM, pros::Motor *FL, pros::Motor *FR, pros::Motor *BL, pros::Motor *BR, pros::Rotation *encoderL, pros::Rotation *encoderR, pros::Rotation *encoderM, pros::Vision *vision_sensor, pros::Imu *IMU, pros::ADIAnalogIn *left_pot, pros::ADIAnalogIn *right_pot, Scorer *scorer);
 
     /**  
  * \return the heading of the robot in degrees (wrapped from 0-360)
