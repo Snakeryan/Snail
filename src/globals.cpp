@@ -39,18 +39,18 @@ pros::Imu IMU(13);
 
 
 pros::ADIAnalogIn upper_counter_light_sensor('A');
-pros::ADIAnalogIn lower_counter_light_sensor('B');
+pros::ADIAnalogIn lower_counter_light_sensor('G');
 pros::ADIAnalogIn dispense_counter_light_sensor('C');
 
 
 pros::ADIAnalogIn right_pot('D');
-pros::ADIAnalogIn left_pot({1, 'B'});
+pros::ADIAnalogIn left_pot('B');
 
 pros::Vision vision_sensor(6);
 pros::vision_signature_s_t BLUE_BALL_SIGNATURE = pros::Vision::signature_from_utility(1, -2527, -1505, -2016, 6743, 11025, 8884, 1.500, 0);
 pros::vision_signature_s_t RED_BALL_SIGNATURE = pros::Vision::signature_from_utility(2, 3571, 7377, 5474, -1, 541, 270, 1.000, 0);
-pros::ADIAnalogIn middle_light_sensor({1, 'D'});
-pros::ADIAnalogIn collision_light_sensor({1, 'H'});
+pros::ADIAnalogIn middle_light_sensor('E');
+pros::ADIAnalogIn collision_light_sensor({1, 'F');
 /*
 // Previous robot globals:
 
