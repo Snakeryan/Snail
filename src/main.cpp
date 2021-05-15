@@ -22,7 +22,7 @@ void display_data()
 		// pros::lcd::set_text(4, "i norm: " + std::to_string(IMU.get_heading()) + "a: " + std::to_string(drivetrain.get_alpha_in_degrees()));
 
 		// light sensor values:
-		// pros::lcd::set_text(2, "lower light counter: " + std::to_string(scorer.get_lower_balls_counted()));
+		pros::lcd::set_text(2, "lower light counter: " + std::to_string(scorer.get_lower_balls_counted()));
 		pros::lcd::set_text(3, "lower light: " + std::to_string(scorer.get_lower_light_calibrated_value()));
 		pros::lcd::set_text(5, "upper light: " + std::to_string(scorer.get_upper_light_calibrated_value()));
 		// pros::lcd::set_text(2, "collision light: " + std::to_string(collision_light_sensor.get_value_calibrated()));
@@ -32,7 +32,7 @@ void display_data()
 		// pros::lcd::set_text(0, "indexer:" + std::to_string((int)indexer.get_temperature()) + "; flywheel:" + std::to_string((int)flywheel.get_temperature()));
 
 		//ball counters:
-		pros::lcd::set_text(6, "upper_balls: " + std::to_string(scorer.get_upper_balls_counted()));
+		// pros::lcd::set_text(6, "upper_balls: " + std::to_string(scorer.get_upper_balls_counted()));
 		// pros::lcd::set_text(5, "middle_balls_counted: " + std::to_string(scorer.get_middle_light_calibratred_value()));
 		// pros::lcd::set_text(1, "balls_to_score: " + std::to_string(scorer.get_balls_to_score()));
 		
@@ -41,8 +41,8 @@ void display_data()
 		// double side_encoder_calculation = (drivetrain.get_left_encoder_distance() - drivetrain.get_right_encoder_distance()) / (20 * pi);
 		// double back_encoder_calculation = (drivetrain.get_middle_encoder_distance() / (20*pi)) - 1.375 ;
 		// pros::lcd::set_text(2, "M_encoder: " + std::to_string(drivetrain.get_middle_encoder_distance()));
-		// pros::lcd::set_text(6, "L_encoder: " + std::to_string(drivetrain.get_left_encoder_distance()));
-		// pros::lcd::set_text(7, "R_encoder: " + std::to_string(drivetrain.get_right_encoder_distance()));
+		pros::lcd::set_text(6, "L_encoder: " + std::to_string(drivetrain.get_left_encoder_distance()));
+		pros::lcd::set_text(7, "R_encoder: " + std::to_string(drivetrain.get_right_encoder_distance()));
 		// pros::lcd::set_text(4,  "calculation: " + std::to_string(back_encoder_calculation));
 
 		// potentiometer values:
@@ -174,31 +174,41 @@ void run_macros()
 {
 	const int upper_light_sensor_threshold = 1200, middle_light_sensor_threshold = 2200;
 	int prev_y = 0;
-	if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_L1) || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
+ 	if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_L1) || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
 	{
 		scorer.set_intakes(127);
 	}
-	else if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN) || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN))
+		else if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN) || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN))
 	{
 		scorer.set_intakes(-63);
 	}
-	else
+		else if (controller2.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) > 100)
+	{
+          scorer.set_indexers(127);
+          scorer.set_flywheel(127);
+    }
+		else if (controller2.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) < -100)
+	{
+          scorer.set_indexers(-127);
+          scorer.set_flywheel(-127);
+    }      
+		else
 	{
 		scorer.set_intakes(0);
 	}
 
 
-    if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_Y) == 1 || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_Y) == 1  && prev_y == 0)
-    {
-		run_skills();
-    }
+    // if (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_Y) == 1 || controller2.get_digital(pros::E_CONTROLLER_DIGITAL_Y) == 1  && prev_y == 0)
+    // {
+	// 	run_skills();
+    // }
 
 	// If both buttons are pressed and limit switch is detected: stop indexer
 	// If only B is pressed: reverse indexer
 	// If only L2 is pressed: indexer
 	// Else: stop indexer
 
-	if ((scorer.get_upper_light_calibrated_value() < upper_light_sensor_threshold || scorer.get_middle_light_calibratred_value() < middle_light_sensor_threshold) && (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_R2) && controller1.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) || (controller2.get_digital(pros::E_CONTROLLER_DIGITAL_R2) && controller2.get_digital(pros::E_CONTROLLER_DIGITAL_L2)))
+	if ((scorer.get_upper_light_calibrated_value() < upper_light_sensor_threshold || scorer.get_middle_light_calibratred_value() < middle_light_sensor_threshold) && (controller1.get_digital(pros::E_CONTROLLER_DIGITAL_R2) && controller1.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) || (controller2.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y)))
 	{
 		// scorer.set_indexers(0);
 		double delay_time = pros::millis() + 150;
@@ -212,6 +222,7 @@ void run_macros()
 		// scorer.set_flywheel(-30);
 		pros::delay(50);
 	}
+	
 	// else if((scorer.get_upper_light_calibrated_value() < upper_light_sensor_threshold && controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2) && controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)))
 	// {
 	// 	double delay_time = pros::millis() + 150;
@@ -286,9 +297,9 @@ void opcontrol()
 	// drivetrain.set_current_global_position(16.077751092179696, 63.107507307056174, 90);
 	while (true)
 	{
-		drivetrain.driver_control(controller1.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) + controller2.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y),
-								  controller1.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X) + controller2.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X),
-								  controller1.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X) + controller2.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X));
+		drivetrain.driver_control(controller1.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y),
+								  controller1.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X),
+								  controller1.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X));
 		run_macros();
 		// pros::lcd::set_text(5, std::to_string(pros::millis()));
 		pros::delay(20);

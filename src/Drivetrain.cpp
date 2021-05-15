@@ -408,7 +408,7 @@ void Drivetrain::drive_to_point(double tX, double tY, double target_angle_in_deg
         // }
 
         //ratio between the rotational and translational errors (tells how much motor power to apply to each):
-        double R = (arc_length_error * rotational_KP) / (10 + std::abs(current_distance_error));
+        double R = (arc_length_error * rotational_KP) / (15 + std::abs(current_distance_error));
 
         R = constrain(R, -1.0, 1.0);
 
@@ -784,6 +784,7 @@ void Drivetrain::setup()
 {
     // setup_sensors();
     encoderL->reset_position();
+    encoderL->reverse();
     encoderM->reset_position();
     encoderM->reverse();
     encoderR->reset_position();

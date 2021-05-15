@@ -19,7 +19,7 @@ void Scorer::run_lower_light_sensor()
     double delay_time = 100;
 
     // value that the light sensor crosses to know if a ball has exited its field of detection:
-    double light_sensor_threshold = 1200;
+    double light_sensor_threshold = 2450;
 
     // making a variable that stores the previous value of the limit switch:
 
@@ -99,9 +99,9 @@ void Scorer::manage_indexer_and_flywheel()
     {
         // set_indexers(-127);
         // wait_until_number_of_lower_balls_counted(lower_balls_counted + 1);
-        set_indexers(127);
+        set_indexers(-127);
         set_flywheel(-127);
-        wait_until_number_of_balls_dispensed(num_balls_to_dispense);
+        wait_until_number_of_lower_balls_counted(num_balls_to_dispense);
         num_balls_to_dispense = 0;
     }
 
